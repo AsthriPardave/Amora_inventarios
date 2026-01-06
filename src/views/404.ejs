@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('partials/navbar') %>
+
+    <main class="container">
+        <div class="error-page">
+            <h1>404</h1>
+            <h2><%= message %></h2>
+            <p>Lo sentimos, no pudimos encontrar la página que buscas.</p>
+            <a href="/" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    </main>
+
+    <%- include('partials/footer') %>
+</body>
+</html>

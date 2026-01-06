@@ -1,0 +1,38 @@
+# Dependencias
+node_modules/
+package-lock.json
+yarn.lock
+
+# Variables de entorno
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Carpetas de IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos de credenciales de Google
+credentials.json
+token.json
+
+# Archivos temporales
+temp/
+tmp/
+*.tmp
+
+# Build
+dist/
+build/

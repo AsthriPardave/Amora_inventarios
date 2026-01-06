@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('partials/navbar') %>
+
+    <main class="container">
+        <div class="hero">
+            <h1>🏪 <%= message %></h1>
+            <p>Bienvenido al sistema de gestión de inventarios con Google Sheets</p>
+            <div class="hero-actions">
+                <a href="/api/inventario" class="btn btn-primary">Ver Inventario</a>
+                <a href="/about" class="btn btn-secondary">Más información</a>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <h3>Gestión de Productos</h3>
+                <p>Administra tu inventario de manera eficiente</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Google Sheets</h3>
+                <p>Sincronización en tiempo real con tus hojas de cálculo</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>Fácil de usar</h3>
+                <p>Interfaz intuitiva y sencilla</p>
+            </div>
+        </div>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>
