@@ -12,85 +12,217 @@
     <main class="container">
         <div class="page-header">
             <h1>📦 <%= title %></h1>
-            <button class="btn btn-primary" onclick="openModal()">+ Agregar Producto</button>
+            <div class="header-actions">
+                <a href="/ingresos/registrar" class="btn btn-primary">+ Registrar Ingreso</a>
+            </div>
         </div>
 
-        <div class="inventory-grid">
-            <% if (productos && productos.length > 0) { %>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Categoría</th>
-                            <th>Cantidad</th>
-                            <th>Precio</th>
-                            <th>Descripción</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% productos.forEach(producto => { %>
+        <!-- Filtros de búsqueda -->
+        <div class="card">
+            <div class="search-filters">
+                <h3>🔍 Filtros de Búsqueda</h3>
+                <form id="formFiltros" class="filters-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="buscarModelo">Buscar Modelo</label>
+                            <input 
+                                type="text" 
+                                id="buscarModelo" 
+                                class="form-control"
+                                placeholder="Buscar por nombre o código..."
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="filtroTalla">Talla</label>
+                            <select id="filtroTalla" class="form-control">
+                                <option value="">Todas las tallas</option>
+                                <% for(let t = 35; t <= 40; t++) { %>
+                                    <option value="<%= t %>"><%= t %></option>
+                                <% } %>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="filtroStock">Stock</label>
+                            <select id="filtroStock" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="disponible">Con stock</option>
+                                <option value="bajo">Stock bajo (&lt; 5)</option>
+                                <option value="agotado">Sin stock</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group align-end">
+                            <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
+                                🔍 Buscar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                                ✕ Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de inventario -->
+        <div class="card">
+            <div class="inventory-grid">
+                <% if (productos && productos.length > 0) { %>
+                    <table class="table" id="tablaInventario">
+                        <thead>
                             <tr>
-                                <td><%= producto.id %></td>
-                                <td><%= producto.nombre %></td>
-                                <td><%= producto.categoria %></td>
-                                <td><%= producto.cantidad %></td>
-                                <td>$<%= producto.precio %></td>
-                                <td><%= producto.descripcion %></td>
-                                <td class="actions">
-                                    <button class="btn-icon" onclick="editProducto('<%= producto.id %>')">✏️</button>
-                                    <button class="btn-icon" onclick="deleteProducto('<%= producto.id %>')">🗑️</button>
-                                </td>
+                                <th>Modelo</th>
+                                <th>Talla 35</th>
+                                <th>Talla 36</th>
+                                <th>Talla 37</th>
+                                <th>Talla 38</th>
+                                <th>Talla 39</th>
+                                <th>Talla 40</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            <% } else { %>
-                <div class="empty-state">
-                    <p>No hay productos en el inventario</p>
-                    <button class="btn btn-primary" onclick="openModal()">Agregar primer producto</button>
-                </div>
-            <% } %>
+                        </thead>
+                        <tbody>
+                            <% productos.forEach(producto => { %>
+                                <tr data-modelo="<%= producto.modelo.toLowerCase() %>" data-categoria="<%= producto.categoria.toLowerCase() %>">
+                                    <td><strong><%= producto.modelo %></strong></td>
+                                    <td class="<%= producto.talla_35 === 0 ? 'stock-cero' : producto.talla_35 < 3 ? 'stock-bajo' : '' %>">
+                                        <%= producto.talla_35 %>
+                                    </td>
+                                    <td class="<%= producto.talla_36 === 0 ? 'stock-cero' : producto.talla_36 < 3 ? 'stock-bajo' : '' %>">
+                                        <%= producto.talla_36 %>
+                                    </td>
+                                    <td class="<%= producto.talla_37 === 0 ? 'stock-cero' : producto.talla_37 < 3 ? 'stock-bajo' : '' %>">
+                                        <%= producto.talla_37 %>
+                                    </td>
+                                    <td class="<%= producto.talla_38 === 0 ? 'stock-cero' : producto.talla_38 < 3 ? 'stock-bajo' : '' %>">
+                                        <%= producto.talla_38 %>
+                                    </td>
+                                    <td class="<%= producto.talla_39 === 0 ? 'stock-cero' : producto.talla_39 < 3 ? 'stock-bajo' : '' %>">
+                                        <%= producto.talla_39 %>
+                                    </td>
+                                    <td class="<%= producto.talla_40 === 0 ? 'stock-cero' : producto.talla_40 < 3 ? 'stock-bajo' : '' %>">
+                                        <%= producto.talla_40 %>
+                                    </td>
+                                    <td><strong><%= producto.total %></strong></td>
+                                    <td>
+                                        <% if (producto.total === 0) { %>
+                                            <span class="badge badge-danger">Sin stock</span>
+                                        <% } else if (producto.total < 10) { %>
+                                            <span class="badge badge-warning">Stock bajo</span>
+                                        <% } else { %>
+                                            <span class="badge badge-success">Disponible</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="actions">
+                                        <button class="btn-icon" onclick="verDetalle('<%= producto.id %>')" title="Ver detalles">
+                                            👁️
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                <% } else { %>
+                    <div class="empty-state">
+                        <div class="empty-icon">📦</div>
+                        <h3>No hay productos en el inventario</h3>
+                        <p>Comienza registrando el ingreso de productos</p>
+                        <a href="/ingresos/registrar" class="btn btn-primary">Registrar primer ingreso</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 Información</h4>
+            <ul>
+                <li><strong>Stock bajo:</strong> Tallas con menos de 3 unidades aparecen en amarillo</li>
+                <li><strong>Sin stock:</strong> Tallas sin unidades aparecen en rojo</li>
+                <li>Usa los filtros para encontrar productos específicos rápidamente</li>
+                <li>Las estadísticas se actualizan automáticamente</li>
+            </ul>
         </div>
     </main>
 
-    <!-- Modal para agregar/editar producto -->
-    <div id="productModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2>Agregar Producto</h2>
-            <form id="productForm">
-                <div class="form-group">
-                    <label for="nombre">Nombre:</label>
-                    <input type="text" id="nombre" name="nombre" required>
-                </div>
-                <div class="form-group">
-                    <label for="categoria">Categoría:</label>
-                    <input type="text" id="categoria" name="categoria">
-                </div>
-                <div class="form-group">
-                    <label for="cantidad">Cantidad:</label>
-                    <input type="number" id="cantidad" name="cantidad" required>
-                </div>
-                <div class="form-group">
-                    <label for="precio">Precio:</label>
-                    <input type="number" id="precio" name="precio" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="descripcion">Descripción:</label>
-                    <textarea id="descripcion" name="descripcion" rows="3"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <%- include('../partials/footer') %>
 
+    <script src="/js/main.js"></script>
     <script src="/js/inventario.js"></script>
+    <script>
+        // Funcionalidad de filtros
+        function aplicarFiltros() {
+            const buscarModelo = document.getElementById('buscarModelo').value.toLowerCase();
+            const filtroTalla = document.getElementById('filtroTalla').value;
+            const filtroStock = document.getElementById('filtroStock').value;
+            
+            const filas = document.querySelectorAll('#tablaInventario tbody tr');
+            let visibles = 0;
+            
+            filas.forEach(fila => {
+                let mostrar = true;
+                
+                // Filtro por modelo
+                if (buscarModelo) {
+                    const modelo = fila.getAttribute('data-modelo') || '';
+                    if (!modelo.includes(buscarModelo)) {
+                        mostrar = false;
+                    }
+                }
+                
+                // Filtro por talla
+                if (filtroTalla && mostrar) {
+                    const celdas = fila.getElementsByTagName('td');
+                    const indiceTalla = parseInt(filtroTalla) - 35 + 1; // +1 porque la primera celda es el modelo
+                    const stockTalla = parseInt(celdas[indiceTalla]?.textContent || '0');
+                    if (stockTalla === 0) {
+                        mostrar = false;
+                    }
+                }
+                
+                // Filtro por stock
+                if (filtroStock && mostrar) {
+                    const celdas = fila.getElementsByTagName('td');
+                    const totalStock = parseInt(celdas[7]?.textContent || '0');
+                    
+                    if (filtroStock === 'disponible' && totalStock === 0) {
+                        mostrar = false;
+                    } else if (filtroStock === 'bajo' && (totalStock === 0 || totalStock >= 5)) {
+                        mostrar = false;
+                    } else if (filtroStock === 'agotado' && totalStock > 0) {
+                        mostrar = false;
+                    }
+                }
+                
+                fila.style.display = mostrar ? '' : 'none';
+                if (mostrar) visibles++;
+            });
+            
+            // Mostrar mensaje si no hay resultados
+            if (visibles === 0 && filas.length > 0) {
+                alert('No se encontraron productos con los filtros seleccionados');
+            }
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('buscarModelo').value = '';
+            document.getElementById('filtroTalla').value = '';
+            document.getElementById('filtroStock').value = '';
+            
+            // Mostrar todas las filas
+            const filas = document.querySelectorAll('#tablaInventario tbody tr');
+            filas.forEach(fila => {
+                fila.style.display = '';
+            });
+        }
+
+        function verDetalle(productoId) {
+            // TODO: Implementar vista de detalle
+            alert('Mostrar detalles del producto: ' + productoId);
+        }
+    </script>
 </body>
 </html>

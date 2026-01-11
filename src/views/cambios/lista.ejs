@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>📋 <%= title %></h1>
+            <p>Visualiza y gestiona todos los cambios de talla</p>
+            <div class="header-actions">
+                <a href="/cambios/registro" class="btn btn-primary">+ Registrar Cambio</a>
+            </div>
+        </div>
+
+        <!-- Filtros de búsqueda -->
+        <div class="card">
+            <div class="search-filters">
+                <h3>🔍 Buscar Cambios</h3>
+                <form action="/cambios/buscar" method="GET" class="filters-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="whatsapp">WhatsApp del Cliente</label>
+                            <input 
+                                type="tel" 
+                                id="whatsapp" 
+                                name="whatsapp" 
+                                class="form-control"
+                                placeholder="987654321"
+                                value="<%= locals.busqueda || '' %>"
+                            >
+                        </div>
+
+                        <div class="form-group align-end">
+                            <button type="submit" class="btn btn-primary">
+                                🔍 Buscar
+                            </button>
+                            <a href="/cambios/lista" class="btn btn-secondary">
+                                ✕ Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de cambios -->
+        <div class="card">
+            <% if (cambios && cambios.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Modelo</th>
+                                <th>Talla Sale</th>
+                                <th>Talla Entra</th>
+                                <th>Cantidad</th>
+                                <th>WhatsApp</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% cambios.forEach(cambio => { %>
+                                <tr>
+                                    <td><%= new Date(cambio.fecha).toLocaleDateString('es-PE') %></td>
+                                    <td><strong><%= cambio.modelo %></strong></td>
+                                    <td class="text-center">
+                                        <span class="talla-badge talla-badge-sale"><%= cambio.tallaSale %></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="talla-badge talla-badge-entra"><%= cambio.tallaEntra %></span>
+                                    </td>
+                                    <td class="text-center"><%= cambio.cantidad %></td>
+                                    <td>
+                                        <a href="https://wa.me/51<%= cambio.whatsapp %>" target="_blank" class="whatsapp-link-small">
+                                            📱 <%= cambio.whatsapp %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <% if (cambio.estado === 'pendiente') { %>
+                                            <span class="badge badge-warning">⏳ Pendiente</span>
+                                        <% } else { %>
+                                            <span class="badge badge-success">✓ Realizado</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="actions">
+                                        <% if (cambio.estado === 'pendiente') { %>
+                                            <form action="/cambios/actualizar/<%= cambio.id %>" method="POST" style="display: inline;">
+                                                <input type="hidden" name="estado" value="realizado">
+                                                <button type="submit" class="btn-icon btn-success" title="Marcar como realizado">
+                                                    ✓
+                                                </button>
+                                            </form>
+                                        <% } else { %>
+                                            <span class="text-muted">-</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Resumen de estados -->
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <strong>Total Cambios:</strong> <%= cambios.length %>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Pendientes:</strong> 
+                        <%= cambios.filter(c => c.estado === 'pendiente').length %>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Realizados:</strong> 
+                        <%= cambios.filter(c => c.estado === 'realizado').length %>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <div class="empty-icon">🔄</div>
+                    <h3>No hay cambios de talla registrados</h3>
+                    <p>Comienza registrando el primer cambio de talla</p>
+                    <a href="/cambios/registro" class="btn btn-primary">Registrar primer cambio</a>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 Información</h4>
+            <ul>
+                <li><strong>Talla Sale (roja):</strong> La talla que el cliente devuelve (regresa al inventario)</li>
+                <li><strong>Talla Entra (verde):</strong> La nueva talla que se entrega al cliente (sale del inventario)</li>
+                <li><strong>Estado Pendiente:</strong> El cambio está registrado pero aún no se ha completado</li>
+                <li><strong>Estado Realizado:</strong> El cambio ya se completó físicamente y el inventario fue actualizado</li>
+                <li>Haz clic en ✓ para marcar un cambio como realizado</li>
+            </ul>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Confirmación antes de marcar como realizado
+        document.querySelectorAll('form[action*="/cambios/actualizar"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('¿Estás seguro de marcar este cambio como realizado? Esta acción actualizará el inventario.')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

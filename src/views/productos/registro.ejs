@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>📦 Registrar Producto</h1>
+            <p>Agrega nuevos productos al stock disponible para venta</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="alert alert-danger">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <% if (success) { %>
+            <div class="alert alert-success">
+                <%= success %>
+            </div>
+        <% } %>
+
+        <div class="card">
+            <form action="/productos/registrar" method="POST" class="form">
+                <div class="form-section">
+                    <h3>📋 Información del Producto</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fecha">Fecha *</label>
+                            <input 
+                                type="date" 
+                                id="fecha" 
+                                name="fecha" 
+                                class="form-control"
+                                value="<%= locals.formData?.fecha || new Date().toISOString().split('T')[0] %>"
+                                required
+                            >
+                            <small>Fecha de disponibilidad del producto</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="modelo">Modelo *</label>
+                            <input 
+                                type="text" 
+                                id="modelo" 
+                                name="modelo" 
+                                class="form-control"
+                                placeholder="Ej: Nike Air Max 270"
+                                value="<%= locals.formData?.modelo || '' %>"
+                                required
+                            >
+                            <small>Nombre o código del modelo</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>👟 Stock por Talla</h3>
+                    <p class="text-muted">Ingresa la cantidad disponible para cada talla (deja en 0 las tallas no disponibles)</p>
+                    
+                    <div class="tallas-grid">
+                        <% for(let talla = 35; talla <= 40; talla++) { %>
+                            <div class="talla-input">
+                                <label for="talla_<%= talla %>">Talla <%= talla %></label>
+                                <input 
+                                    type="number" 
+                                    id="talla_<%= talla %>" 
+                                    name="talla_<%= talla %>" 
+                                    class="form-control"
+                                    min="0"
+                                    value="<%= locals.formData?.[`talla_${talla}`] || 0 %>"
+                                    placeholder="0"
+                                >
+                            </div>
+                        <% } %>
+                    </div>
+                    <small class="text-warning">⚠️ Debes ingresar al menos una talla con cantidad mayor a 0</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        ✓ Registrar Producto
+                    </button>
+                    <a href="/" class="btn btn-secondary">
+                        ✕ Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 Instrucciones</h4>
+            <ul>
+                <li><strong>Fecha:</strong> Indica cuándo el producto estará disponible para venta</li>
+                <li><strong>Modelo:</strong> Nombre claro del producto para identificarlo fácilmente</li>
+                <li><strong>Tallas:</strong> Ingresa la cantidad disponible para cada talla (35 a 40)</li>
+                <li>Al menos una talla debe tener cantidad mayor a 0</li>
+                <li>El stock se descontará automáticamente al registrar ventas</li>
+            </ul>
+        </div>
+
+        <div class="info-box info-box-warning">
+            <h4>⚡ Ejemplo de Registro</h4>
+            <ul>
+                <li>Modelo: Nike Air Max 270</li>
+                <li>Talla 36: 0, Talla 37: 2, Talla 38: 3, Talla 39: 1, Talla 40: 0</li>
+                <li>Total: 6 pares distribuidos en tallas 37, 38 y 39</li>
+            </ul>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

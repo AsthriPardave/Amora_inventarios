@@ -106,6 +106,31 @@ class GoogleSheetsService {
     objectToRow(obj, headers) {
         return headers.map(header => obj[header] || '');
     }
+
+    /**
+     * Actualiza un rango completo de datos (sobrescribe todo)
+     * @param {string} sheetName - Nombre de la hoja
+     * @param {string} startCell - Celda inicial (ej: 'A1')
+     * @param {Array} values - Matriz de valores a escribir
+     */
+    async updateSheet(sheetName, startCell, values) {
+        try {
+            const sheets = googleSheetsConfig.getSheets();
+            const spreadsheetId = googleSheetsConfig.getSpreadsheetId();
+
+            const response = await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!${startCell}`,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values }
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error(`Error al actualizar la hoja ${sheetName}:`, error);
+            throw error;
+        }
+    }
 }
 
 module.exports = new GoogleSheetsService();

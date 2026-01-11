@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>📋 <%= title %></h1>
+            <p>Conoce nuestras políticas y procedimientos</p>
+        </div>
+
+        <div class="politicas-container">
+            <% Object.keys(politicas).forEach(function(key) { 
+                const politica = politicas[key];
+            %>
+                <div class="politica-card">
+                    <div class="politica-header">
+                        <h2><%= politica.titulo %></h2>
+                        <% if (politica.subtitulo) { %>
+                            <p class="politica-subtitulo"><%= politica.subtitulo %></p>
+                        <% } %>
+                    </div>
+                    <div class="politica-body">
+                        <ul class="politica-lista">
+                            <% politica.items.forEach(function(item) { %>
+                                <li><%= item %></li>
+                            <% }) %>
+                        </ul>
+                        
+                        <% if (politica.secciones) { %>
+                            <div class="politica-secciones">
+                                <% Object.keys(politica.secciones).forEach(function(seccionKey) { 
+                                    const seccion = politica.secciones[seccionKey];
+                                %>
+                                    <div class="politica-seccion">
+                                        <h3><%= seccion.titulo %></h3>
+                                        <ul class="politica-lista">
+                                            <% seccion.items.forEach(function(item) { %>
+                                                <li><%= item %></li>
+                                            <% }) %>
+                                        </ul>
+                                    </div>
+                                <% }) %>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <div class="info-box">
+            <h4>📞 ¿Tienes dudas?</h4>
+            <p>Si tienes alguna pregunta sobre nuestras políticas, no dudes en contactarnos. Estamos aquí para ayudarte.</p>
+            <div class="contact-actions">
+                <a href="https://wa.me/51987654321" target="_blank" class="btn btn-whatsapp">
+                    📱 Contactar por WhatsApp
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

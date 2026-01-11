@@ -24,6 +24,9 @@ module.exports = {
     sheetNames: {
         productos: process.env.SHEET_NAME_PRODUCTOS || 'Productos',
         categorias: process.env.SHEET_NAME_CATEGORIAS || 'Categorias',
-        movimientos: process.env.SHEET_NAME_MOVIMIENTOS || 'Movimientos'
+        movimientos: process.env.SHEET_NAME_MOVIMIENTOS || 'Movimientos',
+        ventas: process.env.SHEET_NAME_VENTAS || 'Ventas',
+        ingresos: process.env.SHEET_NAME_INGRESOS || 'Ingresos',
+        cambios: process.env.SHEET_NAME_CAMBIOS || 'Cambios'
     }
 };

@@ -6,7 +6,7 @@
  * Valida los datos de un producto
  */
 function validateProducto(req, res, next) {
-    const { nombre, cantidad, precio } = req.body;
+    const { nombre, cantidad } = req.body;
 
     const errors = [];
 
@@ -18,12 +18,6 @@ function validateProducto(req, res, next) {
         errors.push('La cantidad es obligatoria');
     } else if (isNaN(cantidad) || parseInt(cantidad) < 0) {
         errors.push('La cantidad debe ser un número positivo');
-    }
-
-    if (precio === undefined || precio === null || precio === '') {
-        errors.push('El precio es obligatorio');
-    } else if (isNaN(precio) || parseFloat(precio) < 0) {
-        errors.push('El precio debe ser un número positivo');
     }
 
     if (errors.length > 0) {

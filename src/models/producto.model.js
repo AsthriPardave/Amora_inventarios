@@ -21,7 +21,7 @@ class ProductoModel {
 
             const response = await sheets.spreadsheets.values.get({
                 spreadsheetId,
-                range: `${this.sheetName}!A:F`,
+                range: `${this.sheetName}!A:J`,
             });
 
             const rows = response.data.values;
@@ -72,15 +72,19 @@ class ProductoModel {
                     productoData.id,
                     productoData.nombre,
                     productoData.categoria,
-                    productoData.cantidad,
-                    productoData.precio,
-                    productoData.descripcion
+                    productoData.talla_35,
+                    productoData.talla_36,
+                    productoData.talla_37,
+                    productoData.talla_38,
+                    productoData.talla_39,
+                    productoData.talla_40,
+                    productoData.total
                 ]
             ];
 
             const response = await sheets.spreadsheets.values.append({
                 spreadsheetId,
-                range: `${this.sheetName}!A:F`,
+                range: `${this.sheetName}!A:J`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });
@@ -116,15 +120,19 @@ class ProductoModel {
                     id,
                     productoData.nombre,
                     productoData.categoria,
-                    productoData.cantidad,
-                    productoData.precio,
-                    productoData.descripcion
+                    productoData.talla_35,
+                    productoData.talla_36,
+                    productoData.talla_37,
+                    productoData.talla_38,
+                    productoData.talla_39,
+                    productoData.talla_40,
+                    productoData.total
                 ]
             ];
 
             const response = await sheets.spreadsheets.values.update({
                 spreadsheetId,
-                range: `${this.sheetName}!A${rowNumber}:F${rowNumber}`,
+                range: `${this.sheetName}!A${rowNumber}:J${rowNumber}`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });

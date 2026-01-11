@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>📦 Registrar Ingreso de Productos</h1>
+            <p>Registra la entrada de nuevos productos al inventario</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="alert alert-danger">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <% if (success) { %>
+            <div class="alert alert-success">
+                <%= success %>
+            </div>
+        <% } %>
+
+        <div class="card">
+            <form action="/ingresos/registrar" method="POST" class="form">
+                <div class="form-section">
+                    <h3>📅 Información Básica</h3>
+                    
+                    <div class="form-group">
+                        <label for="fecha">Fecha de Ingreso *</label>
+                        <input 
+                            type="date" 
+                            id="fecha" 
+                            name="fecha" 
+                            class="form-control"
+                            value="<%= locals.formData?.fecha || new Date().toISOString().split('T')[0] %>"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modelo">Modelo *</label>
+                        <input 
+                            type="text" 
+                            id="modelo" 
+                            name="modelo" 
+                            class="form-control"
+                            placeholder="Ej: Zapatilla Nike Air Max"
+                            value="<%= locals.formData?.modelo || '' %>"
+                            required
+                        >
+                        <small>Ingresa el nombre o código del modelo</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>👟 Cantidad por Talla</h3>
+                    <p class="text-muted">Ingresa la cantidad recibida para cada talla (deja en 0 las tallas no incluidas)</p>
+                    
+                    <div class="tallas-grid">
+                        <% for(let talla = 35; talla <= 40; talla++) { %>
+                            <div class="talla-input">
+                                <label for="talla_<%= talla %>">Talla <%= talla %></label>
+                                <input 
+                                    type="number" 
+                                    id="talla_<%= talla %>" 
+                                    name="talla_<%= talla %>" 
+                                    class="form-control"
+                                    min="0"
+                                    value="<%= locals.formData?.[`talla_${talla}`] || 0 %>"
+                                    placeholder="0"
+                                >
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📝 Información Adicional</h3>
+                    
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones</label>
+                        <textarea 
+                            id="observaciones" 
+                            name="observaciones" 
+                            class="form-control"
+                            rows="3"
+                            placeholder="Ej: Productos en perfecto estado, incluye caja original"
+                        ><%= locals.formData?.observaciones || '' %></textarea>
+                        <small>Cualquier detalle adicional sobre este ingreso</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        ✓ Registrar Ingreso
+                    </button>
+                    <a href="/" class="btn btn-secondary">
+                        ✕ Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 Instrucciones</h4>
+            <ul>
+                <li>Verifica que los productos estén en buen estado antes de registrar</li>
+                <li>Ingresa la fecha real en que recibiste la mercadería</li>
+                <li>Asegúrate de contar correctamente cada talla</li>
+                <li>El inventario se actualizará automáticamente al guardar</li>
+            </ul>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

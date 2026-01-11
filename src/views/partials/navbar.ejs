@@ -3,10 +3,23 @@
         <div class="nav-brand">
             <a href="/">🏪 Amora Inventarios</a>
         </div>
-        <ul class="nav-menu">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/api/inventario">Inventario</a></li>
-            <li><a href="/about">Acerca de</a></li>
+        <button class="nav-toggle" id="nav-toggle">
+            ☰
+        </button>
+        <ul class="nav-menu" id="nav-menu">
+            <li><a href="/">🏠 Inicio</a></li>
+            <li class="nav-dropdown">
+                <a href="#" class="nav-dropdown-toggle">📦 Gestión ▾</a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="/productos/registrar">📦 Registrar Producto</a></li>
+                    <li><a href="/productos">📋 Lista de Productos</a></li>
+                    <li><a href="/ventas/registrar">🛒 Registrar Venta</a></li>
+                    <li><a href="/ventas/lista">📊 Ver Ventas</a></li>
+                    <li><a href="/api/inventario">📊 Ver Inventario</a></li>
+                </ul>
+            </li>
+            <li><a href="/cambios/registro">🔄 Cambios</a></li>
+            <li><a href="/politicas">📋 Políticas</a></li>
         </ul>
     </div>
 </nav>

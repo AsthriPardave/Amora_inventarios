@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Amora Inventarios</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>🛒 Registrar Venta</h1>
+            <p>Registra una nueva venta y actualiza el inventario</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="alert alert-danger">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <% if (success) { %>
+            <div class="alert alert-success">
+                <%= success %>
+            </div>
+        <% } %>
+
+        <div class="card">
+            <form action="/ventas/registrar" method="POST" class="form" id="formVenta">
+                <div class="form-section">
+                    <h3>👟 Información del Producto</h3>
+                    
+                    <div class="form-group">
+                        <label for="modelo">Modelo *</label>
+                        <select 
+                            id="modelo" 
+                            name="modelo" 
+                            class="form-control"
+                            required
+                        >
+                            <option value="">Seleccionar modelo</option>
+                            <% modelos.forEach(function(modelo) { %>
+                                <option value="<%= modelo %>" <%= locals.formData?.modelo === modelo ? 'selected' : '' %>>
+                                    <%= modelo %>
+                                </option>
+                            <% }) %>
+                        </select>
+                        <small>Selecciona el modelo del producto a vender</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="talla">Talla *</label>
+                            <select id="talla" name="talla" class="form-control" required disabled>
+                                <option value="">Primero selecciona un modelo</option>
+                            </select>
+                            <small id="tallaInfo" class="text-muted">Selecciona un modelo para ver tallas disponibles</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cantidad">Cantidad *</label>
+                            <input 
+                                type="number" 
+                                id="cantidad" 
+                                name="cantidad" 
+                                class="form-control"
+                                min="1"
+                                value="<%= locals.formData?.cantidad || 1 %>"
+                                required
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>🚚 Información de Envío</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipoVia">Tipo de Vía *</label>
+                            <select id="tipoVia" name="tipoVia" class="form-control" required>
+                                <option value="">Seleccionar</option>
+                                <option value="Av." <%= locals.formData?.tipoVia === 'Av.' ? 'selected' : '' %>>Avenida</option>
+                                <option value="Jr." <%= locals.formData?.tipoVia === 'Jr.' ? 'selected' : '' %>>Jirón</option>
+                                <option value="Calle" <%= locals.formData?.tipoVia === 'Calle' ? 'selected' : '' %>>Calle</option>
+                                <option value="Psje." <%= locals.formData?.tipoVia === 'Psje.' ? 'selected' : '' %>>Pasaje</option>
+                                <option value="Prol." <%= locals.formData?.tipoVia === 'Prol.' ? 'selected' : '' %>>Prolongación</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nombreVia">Nombre de la Vía *</label>
+                            <input 
+                                type="text" 
+                                id="nombreVia" 
+                                name="nombreVia" 
+                                class="form-control"
+                                placeholder="Ej: Los Pinos"
+                                value="<%= locals.formData?.nombreVia || '' %>"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="numero">Número *</label>
+                            <input 
+                                type="text" 
+                                id="numero" 
+                                name="numero" 
+                                class="form-control"
+                                placeholder="Ej: 123"
+                                value="<%= locals.formData?.numero || '' %>"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="interior">Interior / Dpto</label>
+                            <input 
+                                type="text" 
+                                id="interior" 
+                                name="interior" 
+                                class="form-control"
+                                placeholder="Ej: 201, A-5"
+                                value="<%= locals.formData?.interior || '' %>"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ciudad">Distrito / Provincia *</label>
+                        <select id="ciudad" name="ciudad" class="form-control" required>
+                            <option value="">Seleccionar distrito/provincia</option>
+                            <optgroup label="Lima Metropolitana">
+                                <% ciudades.LIMA.forEach(function(ciudad) { %>
+                                    <option value="<%= ciudad %>" <%= locals.formData?.ciudad === ciudad ? 'selected' : '' %>>
+                                        <%= ciudad %>
+                                    </option>
+                                <% }) %>
+                            </optgroup>
+                            <optgroup label="Provincias">
+                                <% ciudades.PROVINCIAS.forEach(function(ciudad) { %>
+                                    <option value="<%= ciudad %>" <%= locals.formData?.ciudad === ciudad ? 'selected' : '' %>>
+                                        <%= ciudad %>
+                                    </option>
+                                <% }) %>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="referencia">Referencia</label>
+                        <input 
+                            type="text" 
+                            id="referencia" 
+                            name="referencia" 
+                            class="form-control"
+                            placeholder="Ej: Frente al parque, al costado de la farmacia"
+                            value="<%= locals.formData?.referencia || '' %>"
+                        >
+                        <small>Ayuda al repartidor a encontrar la dirección más fácilmente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input 
+                                type="checkbox" 
+                                id="deliveryPagado" 
+                                name="deliveryPagado" 
+                                value="true"
+                                <%= locals.formData?.deliveryPagado ? 'checked' : '' %>
+                            >
+                            <span class="checkbox-text">✓ Delivery Pagado *</span>
+                        </label>
+                        <small class="text-warning">⚠️ El delivery debe estar pagado para registrar la venta y descontar del stock</small>
+                    </div>
+
+                    <!-- Mensajes de confirmación para copiar -->
+                    <div class="form-group">
+                        <label>💬 Mensajes de Confirmación (clic para copiar)</label>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('lima')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
+                                🇵🇪 Lima: "Pedido confirmado con pago de delivery S/10. El pago total se realiza al momento de la entrega."
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('provincia')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
+                                🚚 Provincia: "Pedido confirmado. Envío tras validación del pago correspondiente."
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('cambio')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
+                                🔄 Cambio: "Enviar video detallado del calzado para evaluación."
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>👤 Datos del Cliente</h3>
+                    
+                    <div class="form-group">
+                        <label for="whatsapp">WhatsApp del Cliente *</label>
+                        <input 
+                            type="tel" 
+                            id="whatsapp" 
+                            name="whatsapp" 
+                            class="form-control"
+                            placeholder="Ej: 987654321"
+                            pattern="[0-9]{9}"
+                            value="<%= locals.formData?.whatsapp || '' %>"
+                            required
+                        >
+                        <small>9 dígitos, sin espacios ni guiones</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones</label>
+                        <textarea 
+                            id="observaciones" 
+                            name="observaciones" 
+                            class="form-control"
+                            rows="3"
+                            placeholder="Cualquier detalle adicional sobre esta venta"
+                        ><%= locals.formData?.observaciones || '' %></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        ✓ Registrar Venta
+                    </button>
+                    <a href="/" class="btn btn-secondary">
+                        ✕ Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="info-box info-box-warning">
+            <h4>⚠️ Reglas Importantes</h4>
+            <ul>
+                <li><strong>El delivery DEBE estar pagado</strong> para registrar la venta</li>
+                <li>Si el delivery no está pagado, la venta no se registrará</li>
+                <li>El stock solo se descuenta cuando el delivery está confirmado como pagado</li>
+                <li>Verifica la disponibilidad del producto antes de confirmar la venta</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h4>📦 Ejemplo de Dirección Completa</h4>
+            <ul>
+                <li><strong>Tipo de Vía:</strong> Av.</li>
+                <li><strong>Nombre:</strong> Los Rosales</li>
+                <li><strong>Número:</strong> 456</li>
+                <li><strong>Interior:</strong> Dpto 301 (opcional)</li>
+                <li><strong>Distrito:</strong> San Isidro</li>
+                <li><strong>Referencia:</strong> Frente al parque principal (opcional)</li>
+                <li><strong>Resultado:</strong> Av. Los Rosales 456 Int. Dpto 301, San Isidro</li>
+            </ul>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Mensajes predefinidos
+        const mensajes = {
+            lima: 'Pedido confirmado con pago de delivery S/10. El pago total se realiza al momento de la entrega.',
+            provincia: 'Pedido confirmado. Envío tras validación del pago correspondiente.',
+            cambio: 'Enviar video detallado del calzado para evaluación.'
+        };
+
+        // Función para copiar mensaje al portapapeles
+        function copiarMensaje(tipo) {
+            const mensaje = mensajes[tipo];
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(mensaje).then(() => {
+                    alert(`✅ Mensaje copiado al portapapeles:\n\n"${mensaje}"`);
+                }).catch(err => {
+                    console.error('Error al copiar:', err);
+                    alert('❌ Error al copiar el mensaje');
+                });
+            } else {
+                // Fallback para navegadores antiguos
+                const textarea = document.createElement('textarea');
+                textarea.value = mensaje;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert(`✅ Mensaje copiado:\n\n"${mensaje}"`);
+            }
+        }
+
+        // Inventario completo desde el servidor
+        const inventario = <%- JSON.stringify(inventario || {}) %>;
+
+        // Actualizar tallas disponibles cuando se selecciona un modelo
+        document.getElementById('modelo').addEventListener('change', function() {
+            const modeloSeleccionado = this.value;
+            const selectTalla = document.getElementById('talla');
+            const tallaInfo = document.getElementById('tallaInfo');
+            
+            // Limpiar opciones anteriores
+            selectTalla.innerHTML = '<option value="">Seleccionar talla</option>';
+            
+            if (modeloSeleccionado && inventario[modeloSeleccionado]) {
+                const tallasDisponibles = [];
+                
+                // Agregar solo tallas con stock > 0
+                for (let talla = 35; talla <= 40; talla++) {
+                    const stock = inventario[modeloSeleccionado][talla] || 0;
+                    if (stock > 0) {
+                        const option = document.createElement('option');
+                        option.value = talla;
+                        option.textContent = `${talla} (${stock} disponibles)`;
+                        selectTalla.appendChild(option);
+                        tallasDisponibles.push(talla);
+                    }
+                }
+                
+                if (tallasDisponibles.length > 0) {
+                    selectTalla.disabled = false;
+                    tallaInfo.textContent = `👟 Tallas disponibles: ${tallasDisponibles.join(', ')}`;
+                    tallaInfo.className = 'text-success';
+                } else {
+                    selectTalla.disabled = true;
+                    selectTalla.innerHTML = '<option value="">Sin stock disponible</option>';
+                    tallaInfo.textContent = '⚠️ Este modelo no tiene stock disponible';
+                    tallaInfo.className = 'text-danger';
+                }
+            } else {
+                selectTalla.disabled = true;
+                selectTalla.innerHTML = '<option value="">Primero selecciona un modelo</option>';
+                tallaInfo.textContent = 'Selecciona un modelo para ver tallas disponibles';
+                tallaInfo.className = 'text-muted';
+            }
+        });
+
+        // Validar stock antes de enviar
+        document.getElementById('formVenta').addEventListener('submit', function(e) {
+            const modelo = document.getElementById('modelo').value;
+            const talla = parseInt(document.getElementById('talla').value);
+            const cantidad = parseInt(document.getElementById('cantidad').value);
+            
+            if (modelo && talla && inventario[modelo]) {
+                const stockDisponible = inventario[modelo][talla] || 0;
+                
+                if (cantidad > stockDisponible) {
+                    e.preventDefault();
+                    alert(`⚠️ Stock insuficiente.\n\nSolicitado: ${cantidad} unidades\nDisponible: ${stockDisponible} unidades`);
+                    return false;
+                }
+            }
+        });
+    </script>
+    <script>
+        // Validación adicional antes de enviar
+        document.getElementById('formVenta').addEventListener('submit', function(e) {
+            const deliveryPagado = document.getElementById('deliveryPagado').checked;
+            
+            if (!deliveryPagado) {
+                e.preventDefault();
+                alert('⚠️ Debes marcar el delivery como pagado para registrar la venta.');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

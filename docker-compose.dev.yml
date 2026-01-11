@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: amora-inventarios-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
+    volumes:
+      # Hot reload para desarrollo
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - amora-network
+    command: npm run dev
+
+networks:
+  amora-network:
+    driver: bridge

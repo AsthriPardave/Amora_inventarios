@@ -12,28 +12,66 @@
     <main class="container">
         <div class="hero">
             <h1>🏪 <%= message %></h1>
-            <p>Bienvenido al sistema de gestión de inventarios con Google Sheets</p>
-            <div class="hero-actions">
-                <a href="/api/inventario" class="btn btn-primary">Ver Inventario</a>
-                <a href="/about" class="btn btn-secondary">Más información</a>
-            </div>
+            <p>Sistema integral para gestión de ventas e inventario de tu tienda</p>
         </div>
 
-        <div class="features">
-            <div class="feature-card">
-                <div class="feature-icon">📦</div>
-                <h3>Gestión de Productos</h3>
-                <p>Administra tu inventario de manera eficiente</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Google Sheets</h3>
-                <p>Sincronización en tiempo real con tus hojas de cálculo</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🚀</div>
-                <h3>Fácil de usar</h3>
-                <p>Interfaz intuitiva y sencilla</p>
+        <div class="modules-grid">
+            <a href="/productos/registrar" class="module-card">
+                <div class="module-icon">📦</div>
+                <h3>Productos</h3>
+                <p>Registra los productos disponibles para venta</p>
+                <span class="module-badge">Stock</span>
+            </a>
+
+            <a href="/ventas/registrar" class="module-card">
+                <div class="module-icon">🛒</div>
+                <h3>Registrar Venta</h3>
+                <p>Procesa ventas y actualiza el stock automáticamente</p>
+                <span class="module-badge">Venta</span>
+            </a>
+
+            <a href="/api/inventario" class="module-card">
+                <div class="module-icon">📊</div>
+                <h3>Ver Inventario</h3>
+                <p>Consulta el stock disponible con filtros avanzados</p>
+                <span class="module-badge">Consultar</span>
+            </a>
+
+            <a href="/cambios/registro" class="module-card">
+                <div class="module-icon">🔄</div>
+                <h3>Cambios de Talla</h3>
+                <p>Gestiona cambios de talla en pedidos de clientes</p>
+                <span class="module-badge">Servicio</span>
+            </a>
+
+            <a href="/politicas" class="module-card">
+                <div class="module-icon">📋</div>
+                <h3>Políticas</h3>
+                <p>Revisa las políticas y procedimientos de la empresa</p>
+                <span class="module-badge">Información</span>
+            </a>
+
+        </div>
+
+        <div class="info-section">
+            <h2>🚀 Características del Sistema</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>✓ Control de Stock por Talla</h4>
+                    <p>Gestiona inventario detallado por tallas 35-40</p>
+                </div>
+                <div class="feature-item">
+                    <h4>✓ Reglas de Negocio</h4>
+                    <p>Sistema inteligente que valida delivery pagado antes de descontar stock</p>
+                </div>
+                <div class="feature-item">
+                    <h4>✓ Gestión de Cambios de Talla</h4>
+                    <p>Control de cambios con talla que sale y talla que entra</p>
+                </div>
+                <div class="feature-item">
+                    <h4>✓ Integración Google Sheets</h4>
+                    <p>Sincronización en tiempo real con tus hojas de cálculo</p>
+                </div>
             </div>
         </div>
     </main>
