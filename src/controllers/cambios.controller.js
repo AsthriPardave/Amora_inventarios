@@ -15,7 +15,7 @@ class CambiosController {
             // Leer cambios desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.cambios,
-                'A:K'
+                'A:J'
             );
 
             let cambios = [];
@@ -29,11 +29,10 @@ class CambiosController {
                         tallaSale: row[3] || '',
                         modeloNuevo: row[4] || '',
                         tallaEntra: row[5] || '',
-                        motivo: row[6] || '',
-                        cliente: row[7] || '',
-                        whatsapp: row[8] || '',
-                        observaciones: row[9] || '',
-                        estado: row[10] || 'pendiente'
+                        cantidad: row[6] || '1',
+                        whatsapp: row[7] || '',
+                        observaciones: row[8] || '',
+                        estado: row[9] || 'pendiente'
                     };
                 });
             }
@@ -76,73 +75,76 @@ class CambiosController {
                     title: 'Registrar Cambio de Talla',
                     error: '⚠️ Debes ingresar un número de WhatsApp para buscar.',
                     success: null,
+                    pedidos: null,
                     formData: null
                 });
             }
 
-            // Buscar pedido en Google Sheets por WhatsApp
+            // Buscar TODOS los pedidos del cliente en Google Sheets por WhatsApp
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
                 'A:O'
             );
 
-            let pedido = null;
+            let pedidos = [];
             
             if (rows && rows.length > 1) {
-                // Buscar por WhatsApp (columna L, índice 11)
+                // Buscar todos los pedidos por WhatsApp (columna L, índice 11)
+                // Solo incluir los que estén en estado "Enviado" o "Entregado"
+                const modelosUnicos = new Set();
+                
                 for (let i = 1; i < rows.length; i++) {
-                    if (rows[i][11] === whatsapp) {
-                        pedido = {
-                            encontrado: true,
-                            modelo: rows[i][1] || '',
+                    const estadoEnvio = rows[i][13] || 'Pendiente de envío';
+                    
+                    if (rows[i][11] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) {
+                        const modelo = rows[i][1] || '';
+                        modelosUnicos.add(modelo);
+                        
+                        pedidos.push({
+                            index: i + 1, // Índice de la fila en Google Sheets (base 1)
+                            fecha: rows[i][0] || '',
+                            modelo: modelo,
                             talla: rows[i][2] || '',
-                            cantidad: rows[i][3] || 1,
-                            whatsapp: whatsapp
-                        };
-                        break;
+                            cantidad: parseInt(rows[i][3]) || 1,
+                            whatsapp: whatsapp,
+                            estado: estadoEnvio,
+                            deliveryPagado: rows[i][12] || ''
+                        });
                     }
                 }
-            }
-
-            if (pedido && pedido.encontrado) {
-                // Obtener tallas disponibles del modelo en inventario
-                const productosRows = await googleSheetsService.readSheet(
-                    config.sheetNames.productos,
-                    'A:J'
-                );
-
-                let tallasDisponibles = [];
-                if (productosRows && productosRows.length > 1) {
-                    // Buscar el modelo en inventario
-                    for (let i = 1; i < productosRows.length; i++) {
-                        const modeloInventario = productosRows[i][1] || '';
-                        if (modeloInventario.toLowerCase() === pedido.modelo.toLowerCase()) {
-                            // Verificar tallas con stock > 0 (columnas D a I = índices 3 a 8)
-                            for (let tallaIdx = 0; tallaIdx < 6; tallaIdx++) {
-                                const talla = 35 + tallaIdx;
-                                const stock = parseInt(productosRows[i][3 + tallaIdx]) || 0;
-                                if (stock > 0) {
-                                    tallasDisponibles.push({ talla: talla, stock: stock });
-                                }
-                            }
-                            break;
-                        }
-                    }
+                
+                // Determinar si tiene múltiples modelos
+                const tieneMultiplesModelos = modelosUnicos.size > 1;
+                
+                if (pedidos.length === 0) {
+                    return res.render('cambios/registro', {
+                        title: 'Registrar Cambio de Talla',
+                        error: '⚠️ No se encontraron pedidos en estado "Enviado" o "Entregado" para este número de WhatsApp.',
+                        success: null,
+                        pedidos: null,
+                        formData: null
+                    });
                 }
 
                 res.render('cambios/registro', {
                     title: 'Registrar Cambio de Talla',
                     error: null,
                     success: null,
-                    formData: null,
-                    pedido: pedido,
-                    tallasDisponibles: tallasDisponibles
+                    pedidos: pedidos,
+                    tieneMultiplesModelos: tieneMultiplesModelos,
+                    whatsapp: whatsapp,
+                    formData: null
                 });
-            } else {
-                res.render('cambios/registro', {
+                
+                return;
+            }
+
+            if (pedidos.length === 0) {
+                return res.render('cambios/registro', {
                     title: 'Registrar Cambio de Talla',
-                    error: '❌ No se encontró ningún pedido con ese número de WhatsApp.',
+                    error: '⚠️ No se encontraron pedidos en estado "Enviado" o "Entregado" para este número de WhatsApp.',
                     success: null,
+                    pedidos: null,
                     formData: null
                 });
             }
@@ -153,6 +155,7 @@ class CambiosController {
                 title: 'Registrar Cambio de Talla',
                 error: '❌ Error al buscar el pedido. Por favor, intente nuevamente.',
                 success: null,
+                pedidos: null,
                 formData: req.body
             });
         }
@@ -163,14 +166,67 @@ class CambiosController {
      */
     static async registrarCambio(req, res) {
         try {
-            const { fecha, modeloOriginal, tallaSale, modeloNuevo, tallaEntra, motivo, cliente, whatsapp, observaciones } = req.body;
+            const { fecha, modeloOriginal, tallaSale, cantidadOriginal, cantidadCambio, modeloNuevo, tallaEntra, whatsapp, observaciones, formToken } = req.body;
+
+            console.log('Datos recibidos en registrarCambio:', req.body);
+
+            // PREVENCIÓN DE DUPLICADOS
+            const cambiosRows = await googleSheetsService.readSheet(
+                config.sheetNames.cambios,
+                'A:J'
+            );
+
+            if (cambiosRows && cambiosRows.length > 1) {
+                const ahora = new Date();
+                const ultimosCambios = cambiosRows.slice(-5);
+                
+                for (const cambio of ultimosCambios) {
+                    const fechaCambio = new Date(cambio[1] || 0);
+                    const diferenciaSegundos = (ahora - fechaCambio) / 1000;
+                    
+                    if (diferenciaSegundos < 5 &&
+                        cambio[2] === modeloOriginal &&
+                        cambio[3] === tallaSale &&
+                        cambio[5] === tallaEntra &&
+                        cambio[7] === whatsapp) {
+                        
+                        console.warn('⚠️ Duplicado detectado - Cambio ignorado');
+                        return res.render('cambios/registro', {
+                            title: 'Registrar Cambio de Talla',
+                            error: null,
+                            success: '✅ Cambio ya registrado. No se permiten duplicados.',
+                            pedidos: null,
+                            tieneMultiplesModelos: false,
+                            formData: null
+                        });
+                    }
+                }
+            }
 
             // Validar datos básicos
             if (!fecha || !modeloOriginal || !tallaSale || !tallaEntra || !whatsapp) {
+                console.log('Validación fallida - campos faltantes:', { fecha, modeloOriginal, tallaSale, tallaEntra, whatsapp });
                 return res.render('cambios/registro', {
                     title: 'Registrar Cambio de Talla',
                     error: '⚠️ Todos los campos obligatorios deben estar completos.',
                     success: null,
+                    pedidos: null,
+                    tieneMultiplesModelos: false,
+                    formData: req.body
+                });
+            }
+
+            // Validar cantidad a cambiar
+            const cantidadCambioNum = parseInt(cantidadCambio) || 1;
+            const cantidadOriginalNum = parseInt(cantidadOriginal) || 1;
+            
+            if (cantidadCambioNum > cantidadOriginalNum) {
+                return res.render('cambios/registro', {
+                    title: 'Registrar Cambio de Talla',
+                    error: '⚠️ La cantidad a cambiar no puede ser mayor a la cantidad del pedido.',
+                    success: null,
+                    pedidos: null,
+                    tieneMultiplesModelos: false,
                     formData: req.body
                 });
             }
@@ -184,24 +240,28 @@ class CambiosController {
                     title: 'Registrar Cambio de Talla',
                     error: '⚠️ Las tallas deben estar entre 35 y 40.',
                     success: null,
+                    pedidos: null,
+                    tieneMultiplesModelos: false,
                     formData: req.body
                 });
             }
 
             // Generar ID único
             const id = Date.now().toString();
+            
+            // Determinar el modelo final (nuevo o el original si no se especificó)
+            const modeloFinal = modeloNuevo && modeloNuevo.trim() !== '' ? modeloNuevo.trim() : modeloOriginal.trim();
 
             // Preparar datos para Google Sheets
-            // Columnas: id, fecha, modeloOriginal, tallaSale, modeloNuevo, tallaEntra, motivo, cliente, whatsapp, observaciones, estado
+            // Columnas: id, fecha, modeloOriginal, tallaSale, modeloNuevo, tallaEntra, cantidad, whatsapp, observaciones, estado
             const cambioData = [
                 id,
                 fecha,
                 modeloOriginal.trim(),
                 tallaSaleNum,
-                modeloNuevo ? modeloNuevo.trim() : modeloOriginal.trim(),
+                modeloFinal,
                 tallaEntraNum,
-                motivo || 'Cambio de talla',
-                cliente || '',
+                cantidadCambioNum,
                 whatsapp,
                 observaciones || '',
                 'pendiente'
@@ -214,12 +274,89 @@ class CambiosController {
             );
 
             console.log('Cambio de talla registrado en Google Sheets:', cambioData);
+            
+            // ACTUALIZAR LA VENTA ORIGINAL
+            // Buscar la venta original en ventas para agregar observación
+            const ventasRows = await googleSheetsService.readSheet(
+                config.sheetNames.ventas,
+                'A:O'
+            );
+
+            if (ventasRows && ventasRows.length > 1) {
+                // Buscar la fila de la venta original (coincide whatsapp, modelo y talla)
+                for (let i = 1; i < ventasRows.length; i++) {
+                    const ventaWhatsapp = ventasRows[i][11] || '';
+                    const ventaModelo = ventasRows[i][1] || '';
+                    const ventaTalla = ventasRows[i][2] || '';
+                    
+                    if (ventaWhatsapp === whatsapp && 
+                        ventaModelo === modeloOriginal.trim() && 
+                        ventaTalla == tallaSaleNum) {
+                        
+                        // Actualizar observaciones de la venta original
+                        const observacionCambio = `🔄 PRODUCTO CAMBIADO - Cambio registrado el ${fecha}. Nueva talla: ${tallaEntraNum}${modeloFinal !== modeloOriginal.trim() ? `, Nuevo modelo: ${modeloFinal}` : ''}`;
+                        const rowIndex = i + 1; // Base 1
+                        const range = `${config.sheetNames.ventas}!O${rowIndex}`;
+                        
+                        await googleSheetsService.updateCell(range, observacionCambio);
+                        console.log(`Venta original actualizada con observación de cambio en fila ${rowIndex}`);
+                        break; // Solo actualizar la primera coincidencia
+                    }
+                }
+            }
+
+            // REGISTRAR NUEVA VENTA CON EL PRODUCTO CAMBIADO
+            // Obtener datos de la venta original para copiar dirección y otros datos
+            if (ventasRows && ventasRows.length > 1) {
+                for (let i = 1; i < ventasRows.length; i++) {
+                    const ventaWhatsapp = ventasRows[i][11] || '';
+                    const ventaModelo = ventasRows[i][1] || '';
+                    const ventaTalla = ventasRows[i][2] || '';
+                    
+                    if (ventaWhatsapp === whatsapp && 
+                        ventaModelo === modeloOriginal.trim() && 
+                        ventaTalla == tallaSaleNum) {
+                        
+                        // Copiar datos de dirección de la venta original
+                        const fechaVenta = new Date().toISOString();
+                        
+                        const nuevaVentaData = [
+                            fechaVenta,
+                            modeloFinal, // nuevo modelo
+                            tallaEntraNum, // nueva talla
+                            cantidadCambioNum, // cantidad
+                            ventasRows[i][4] || '', // tipoVia
+                            ventasRows[i][5] || '', // nombreVia
+                            ventasRows[i][6] || '', // numero
+                            ventasRows[i][7] || '', // interior
+                            ventasRows[i][8] || '', // ciudad
+                            ventasRows[i][9] || '', // referencia
+                            ventasRows[i][10] || '', // direccionCompleta
+                            whatsapp,
+                            'Sí', // deliveryPagado
+                            'Pendiente de envío', // estado
+                            `🔄 Producto generado por cambio de talla (ID cambio: ${id})` // observaciones
+                        ];
+                        
+                        await googleSheetsService.appendSheet(
+                            config.sheetNames.ventas,
+                            [nuevaVentaData]
+                        );
+                        
+                        console.log('Nueva venta registrada por cambio:', nuevaVentaData);
+                        break;
+                    }
+                }
+            }
+            
             console.log('⚠️ Inventario NO modificado. El cambio debe ser marcado como "Realizado" para ajustar el inventario.');
 
             res.render('cambios/registro', {
                 title: 'Registrar Cambio de Talla',
                 error: null,
-                success: '✅ Cambio de talla registrado exitosamente.\n⚠️ Estado: Pendiente. El inventario se ajustará cuando se marque como "Realizado".',
+                success: `✅ Cambio de ${cantidadCambioNum} unidad(es) registrado exitosamente.\n✅ Venta original marcada como cambiada.\n✅ Nueva venta registrada con el producto cambiado.\n⚠️ Estado: Pendiente. El inventario se ajustará cuando se marque como "Realizado".`,
+                pedidos: null,
+                tieneMultiplesModelos: false,
                 formData: null
             });
 
@@ -229,6 +366,8 @@ class CambiosController {
                 title: 'Registrar Cambio de Talla',
                 error: '❌ Error al registrar el cambio. Por favor, intente nuevamente.',
                 success: null,
+                pedidos: null,
+                tieneMultiplesModelos: false,
                 formData: req.body
             });
         }
@@ -248,7 +387,7 @@ class CambiosController {
             // Leer cambios desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.cambios,
-                'A:K'
+                'A:J'
             );
 
             if (!rows || rows.length <= 1) {
@@ -269,11 +408,10 @@ class CambiosController {
                         tallaSale: parseInt(rows[i][3]),
                         modeloNuevo: rows[i][4],
                         tallaEntra: parseInt(rows[i][5]),
-                        motivo: rows[i][6],
-                        cliente: rows[i][7],
-                        whatsapp: rows[i][8],
-                        observaciones: rows[i][9],
-                        estadoActual: rows[i][10]
+                        cantidad: parseInt(rows[i][6]) || 1,
+                        whatsapp: rows[i][7],
+                        observaciones: rows[i][8],
+                        estadoActual: rows[i][9]
                     };
                     break;
                 }
@@ -300,17 +438,18 @@ class CambiosController {
                         const modeloInventario = productosRows[i][1] || '';
                         
                         if (modeloInventario.toLowerCase() === cambio.modeloOriginal.toLowerCase()) {
-                            // Actualizar stock de tallas
+                            // Actualizar stock de tallas según la cantidad
                             const indiceTallaSale = cambio.tallaSale - 35 + 3; // columna D=3 para talla 35
                             const indiceTallaEntra = cambio.tallaEntra - 35 + 3;
+                            const cantidad = cambio.cantidad;
                             
-                            // La talla que SALE vuelve al stock (+1)
+                            // La talla que SALE vuelve al stock (+cantidad)
                             const stockTallaSale = parseInt(productosRows[i][indiceTallaSale]) || 0;
-                            productosRows[i][indiceTallaSale] = stockTallaSale + 1;
+                            productosRows[i][indiceTallaSale] = stockTallaSale + cantidad;
                             
-                            // La talla que ENTRA se descuenta (-1)
+                            // La talla que ENTRA se descuenta (-cantidad)
                             const stockTallaEntra = parseInt(productosRows[i][indiceTallaEntra]) || 0;
-                            productosRows[i][indiceTallaEntra] = Math.max(0, stockTallaEntra - 1);
+                            productosRows[i][indiceTallaEntra] = Math.max(0, stockTallaEntra - cantidad);
                             
                             // Recalcular total
                             let nuevoTotal = 0;
@@ -319,7 +458,7 @@ class CambiosController {
                             }
                             productosRows[i][9] = nuevoTotal; // columna J = total
                             
-                            console.log(`✅ Inventario ajustado: Talla ${cambio.tallaSale} +1, Talla ${cambio.tallaEntra} -1`);
+                            console.log(`✅ Inventario ajustado: Talla ${cambio.tallaSale} +${cantidad}, Talla ${cambio.tallaEntra} -${cantidad}`);
                             break;
                         }
                     }
@@ -334,9 +473,7 @@ class CambiosController {
             }
 
             // Actualizar el estado del cambio
-            rows[cambioIndex][10] = estado;
-            
-            // Actualizar Google Sheets
+            rows[cambioIndex][9] = estado;
             await googleSheetsService.updateSheet(
                 config.sheetNames.cambios,
                 'A1',
@@ -363,7 +500,7 @@ class CambiosController {
             // Leer cambios desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.cambios,
-                'A:K'
+                'A:J'
             );
 
             let cambios = [];

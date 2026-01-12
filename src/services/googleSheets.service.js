@@ -67,6 +67,7 @@ class GoogleSheetsService {
                 spreadsheetId,
                 range: `${sheetName}!A:A`,
                 valueInputOption: 'USER_ENTERED',
+                insertDataOption: 'INSERT_ROWS',
                 resource: { values }
             });
 
@@ -128,6 +129,30 @@ class GoogleSheetsService {
             return response.data;
         } catch (error) {
             console.error(`Error al actualizar la hoja ${sheetName}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Actualiza una celda específica
+     * @param {string} range - Rango completo incluyendo nombre de hoja (ej: 'ventas!O10')
+     * @param {string} value - Valor a escribir en la celda
+     */
+    async updateCell(range, value) {
+        try {
+            const sheets = googleSheetsConfig.getSheets();
+            const spreadsheetId = googleSheetsConfig.getSpreadsheetId();
+
+            const response = await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: range,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [[value]] }
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error(`Error al actualizar la celda ${range}:`, error);
             throw error;
         }
     }

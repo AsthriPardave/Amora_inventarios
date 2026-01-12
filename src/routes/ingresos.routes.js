@@ -4,15 +4,12 @@
 
 const express = require('express');
 const router = express.Router();
-const IngresosController = require('../controllers/ingresos.controller');
+const ProductosController = require('../controllers/ingresos.controller');
 
-// GET - Mostrar formulario de registro de ingreso
-router.get('/registrar', IngresosController.mostrarFormularioIngreso);
+// GET - Mostrar formulario para agregar stock a producto existente
+router.get('/agregar-stock', ProductosController.mostrarFormularioAgregarStock);
 
-// POST - Procesar registro de ingreso
-router.post('/registrar', IngresosController.registrarIngreso);
-
-// GET - Listar ingresos
-router.get('/lista', IngresosController.listarIngresos);
+// POST - Procesar agregado de stock
+router.post('/agregar-stock', ProductosController.agregarStockProducto);
 
 module.exports = router;

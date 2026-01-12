@@ -29,6 +29,9 @@
 
         <div class="card">
             <form action="/ventas/registrar" method="POST" class="form" id="formVenta">
+                <!-- Token único para prevenir duplicados -->
+                <input type="hidden" name="formToken" value="<%= Date.now() + '-' + Math.random().toString(36).substr(2, 9) %>">
+                
                 <div class="form-section">
                     <h3>👟 Información del Producto</h3>
                     

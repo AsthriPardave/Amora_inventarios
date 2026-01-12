@@ -28,5 +28,19 @@ module.exports = {
         ventas: process.env.SHEET_NAME_VENTAS || 'Ventas',
         ingresos: process.env.SHEET_NAME_INGRESOS || 'Ingresos',
         cambios: process.env.SHEET_NAME_CAMBIOS || 'Cambios'
+    },
+
+    // Configuración de sesiones
+    session: {
+        secret: process.env.SESSION_SECRET || 'amora-secret-key-change-in-production',
+        name: 'amora.sid',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: false, // Cambiar a true en producción con HTTPS
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000, // 24 horas
+            sameSite: 'lax'
+        }
     }
 };

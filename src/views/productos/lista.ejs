@@ -12,77 +12,56 @@
     <main class="container">
         <div class="page-header">
             <h1>📦 Lista de Productos</h1>
-            <div class="header-actions">
-                <a href="/productos/registrar" class="btn btn-primary">
-                    ➕ Nuevo Producto
-                </a>
-            </div>
+            <p>Todos los productos registrados en el inventario</p>
         </div>
 
         <% if (productos.length === 0) { %>
-            <div class="empty-state">
-                <div class="empty-icon">📦</div>
-                <h3>No hay productos registrados</h3>
-                <p>Comienza agregando tu primer producto al stock</p>
-                <a href="/productos/registrar" class="btn btn-primary">
-                    ➕ Registrar Primer Producto
-                </a>
+            <div class="alert alert-info">
+                📭 No hay productos registrados aún.
             </div>
         <% } else { %>
-            <div class="card">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Modelo</th>
+                            <th>Categoría</th>
+                            <th>T35</th>
+                            <th>T36</th>
+                            <th>T37</th>
+                            <th>T38</th>
+                            <th>T39</th>
+                            <th>T40</th>
+                            <th>Total</th>
+                            <th>Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% productos.forEach(producto => { %>
                             <tr>
-                                <th>#</th>
-                                <th> Modelo</th>
-                                <th>📏 Tallas Disponibles</th>
-                                <th>📊 Total</th>
+                                <td><%= producto.id %></td>
+                                <td><strong><%= producto.modelo %></strong></td>
+                                <td><%= producto.categoria %></td>
+                                <td><%= producto.tallas[35] || 0 %></td>
+                                <td><%= producto.tallas[36] || 0 %></td>
+                                <td><%= producto.tallas[37] || 0 %></td>
+                                <td><%= producto.tallas[38] || 0 %></td>
+                                <td><%= producto.tallas[39] || 0 %></td>
+                                <td><%= producto.tallas[40] || 0 %></td>
+                                <td><strong><%= producto.totalUnidades %></strong></td>
+                                <td><%= producto.precio %></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <% productos.forEach((producto, index) => { %>
-                                <tr>
-                                    <td><%= index + 1 %></td>
-                                    <td><strong><%= producto.modelo %></strong></td>
-                                    <td>
-                                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
-                                            <% Object.entries(producto.tallas).forEach(([talla, cantidad]) => { %>
-                                                <span class="talla-badge talla-badge-entra" 
-                                                      title="Talla <%= talla %>: <%= cantidad %> unidades"
-                                                      style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">
-                                                    <%= talla %>
-                                                </span>
-                                            <% }) %>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <% if (producto.totalUnidades === 0) { %>
-                                            <span class="badge badge-danger">Agotado</span>
-                                        <% } else if (producto.totalUnidades <= 3) { %>
-                                            <span class="badge badge-warning"><%= producto.totalUnidades %> unidades</span>
-                                        <% } else { %>
-                                            <span class="badge badge-success"><%= producto.totalUnidades %> unidades</span>
-                                        <% } %>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <strong>Total Productos</strong>
-                        <span><%= productos.length %></span>
-                    </div>
-                    <div class="stat-item">
-                        <strong>Total Unidades</strong>
-                        <span><%= productos.reduce((sum, p) => sum + p.totalUnidades, 0) %></span>
-                    </div>
-                </div>
+                        <% }); %>
+                    </tbody>
+                </table>
             </div>
         <% } %>
+
+        <div class="form-actions">
+            <a href="/productos/registrar" class="btn btn-primary">+ Nuevo Producto</a>
+            <a href="/" class="btn btn-secondary">← Volver</a>
+        </div>
     </main>
 
     <%- include('../partials/footer') %>

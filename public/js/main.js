@@ -100,4 +100,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // ============ PREVENCIÓN DE DOBLE CLICK EN FORMULARIOS ============
+    const forms = document.querySelectorAll('form');
+    
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            // Buscar el botón de submit dentro del formulario
+            const submitButton = this.querySelector('button[type="submit"]');
+            
+            if (submitButton && !submitButton.disabled) {
+                // Guardar el texto original del botón
+                const originalText = submitButton.innerHTML;
+                
+                // Deshabilitar el botón
+                submitButton.disabled = true;
+                submitButton.classList.add('loading');
+                
+                // Cambiar el texto del botón a "Procesando..."
+                submitButton.innerHTML = '⏳ Procesando...';
+                
+                // Re-habilitar el botón si hay un error (después de 30 segundos como fallback)
+                setTimeout(() => {
+                    if (submitButton.disabled) {
+                        submitButton.disabled = false;
+                        submitButton.classList.remove('loading');
+                        submitButton.innerHTML = originalText;
+                    }
+                }, 30000);
+            }
+        });
+    });
 });

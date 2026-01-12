@@ -178,7 +178,7 @@
                     <div class="stat-label">Pendientes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number"><%= ventas.filter(v => v.deliveryPagado === true || v.deliveryPagado === 'true').length %></div>
+                    <div class="stat-number"><%= ventas.filter(v => v.deliveryPagado === 'Sí' || v.deliveryPagado === true || v.deliveryPagado === 'true').length %></div>
                     <div class="stat-label">Pagados</div>
                 </div>
             </div>
@@ -198,18 +198,27 @@
                             <th>Delivery</th>
                             <th>Estado</th>
                             <th>Observaciones</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <% ventas.forEach(function(venta) { 
-                            const fecha = new Date(venta.fecha);
-                            const fechaFormateada = fecha.toLocaleDateString('es-PE', { 
-                                year: 'numeric', 
-                                month: '2-digit', 
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
+                        <% ventas.forEach(function(venta, index) { 
+                            let fechaFormateada = venta.fecha || '';
+                            try {
+                                const fecha = new Date(venta.fecha);
+                                if (!isNaN(fecha.getTime())) {
+                                    fechaFormateada = fecha.toLocaleDateString('es-PE', { 
+                                        year: 'numeric', 
+                                        month: '2-digit', 
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                }
+                            } catch (e) {
+                                // Si hay error, mantener la fecha original
+                            }
+                            const rowIndex = index + 2; // +2 porque es índice 0-based y hay encabezado
                         %>
                         <tr>
                             <td><%= fechaFormateada %></td>
@@ -230,7 +239,7 @@
                             <td><%= venta.ciudad %></td>
                             <td><%= venta.whatsapp %></td>
                             <td>
-                                <% if (venta.deliveryPagado === true || venta.deliveryPagado === 'true') { %>
+                                <% if (venta.deliveryPagado === 'Sí' || venta.deliveryPagado === true || venta.deliveryPagado === 'true') { %>
                                     <span class="badge badge-pagado">✓ Pagado</span>
                                 <% } else { %>
                                     <span class="badge badge-pendiente">Pendiente</span>
@@ -253,6 +262,14 @@
                                 <% } else { %>
                                     <span style="color: #adb5bd;">-</span>
                                 <% } %>
+                            </td>
+                            <td>
+                                <button 
+                                    class="btn-edit-status" 
+                                    onclick='editarEstado(<%= rowIndex %>, "<%= venta.deliveryPagado %>", "<%= venta.estado || "Pendiente de envío" %>")'
+                                    title="Cambiar estado">
+                                    ✏️
+                                </button>
                             </td>
                         </tr>
                         <% }) %>
@@ -279,8 +296,205 @@
                 🏠 Volver al Inicio
             </a>
         </div>
+
+        <!-- Modal para editar estado -->
+        <div id="modalEditarEstado" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✏️ Cambiar Estado de Venta</h2>
+                    <span class="modal-close" onclick="cerrarModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarEstado">
+                        <input type="hidden" id="rowIndex" name="rowIndex">
+                        
+                        <div class="form-group">
+                            <label for="deliveryPagado">Estado del Delivery</label>
+                            <select id="deliveryPagado" name="deliveryPagado" class="form-control">
+                                <option value="No">Pendiente de Pago</option>
+                                <option value="Sí">Pagado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="estado">Estado del Envío</label>
+                            <select id="estado" name="estado" class="form-control">
+                                <option value="Pendiente de envío">Pendiente de envío</option>
+                                <option value="Enviado">Enviado</option>
+                                <option value="Entregado">Entregado</option>
+                            </select>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" class="btn-primary">💾 Guardar Cambios</button>
+                            <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </main>
 
     <%- include('../partials/footer') %>
+
+    <style>
+        .btn-edit-status {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: transform 0.2s;
+        }
+
+        .btn-edit-status:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+        }
+
+        .modal-close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+        }
+    </style>
+
+    <script>
+        function editarEstado(rowIndex, deliveryPagado, estado) {
+            document.getElementById('rowIndex').value = rowIndex;
+            // Convertir deliveryPagado a 'Sí' o 'No'
+            const deliveryValue = (deliveryPagado === 'Sí' || deliveryPagado === 'true' || deliveryPagado === true) ? 'Sí' : 'No';
+            document.getElementById('deliveryPagado').value = deliveryValue;
+            document.getElementById('estado').value = estado || 'Pendiente de envío';
+            document.getElementById('modalEditarEstado').style.display = 'block';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalEditarEstado').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer click fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalEditarEstado');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+
+        // Manejar envío del formulario
+        document.getElementById('formEditarEstado').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                rowIndex: parseInt(formData.get('rowIndex')),
+                deliveryPagado: formData.get('deliveryPagado'),
+                estado: formData.get('estado')
+            };
+
+            try {
+                const response = await fetch('/ventas/actualizar-estado', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Estado actualizado correctamente');
+                    location.reload(); // Recargar la página para mostrar los cambios
+                } else {
+                    alert('❌ Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al actualizar el estado');
+            }
+        });
+    </script>
 </body>
 </html>

@@ -15,4 +15,7 @@ router.post('/registrar', VentasController.registrarVenta);
 // GET - Listar ventas
 router.get('/lista', VentasController.listarVentas);
 
+// POST - Actualizar estado de venta
+router.post('/actualizar-estado', VentasController.actualizarEstadoVenta);
+
 module.exports = router;

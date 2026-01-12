@@ -92,14 +92,11 @@ Esta guía te llevará paso a paso para conectar tu aplicación con Google Sheet
 
 3. **Crear las pestañas necesarias**
    
-   Necesitas crear 6 pestañas (hojas). Haz clic en el **"+"** abajo para agregar:
+   Necesitas crear 3 pestañas (hojas). Haz clic en el **"+"** abajo para agregar:
    
    - ✅ **Productos**
    - ✅ **Ventas**
-   - ✅ **Ingresos**
    - ✅ **Cambios**
-   - ✅ **Categorias**
-   - ✅ **Movimientos**
 
 4. **Configurar la hoja "Productos"**
    
@@ -129,9 +126,13 @@ Esta guía te llevará paso a paso para conectar tu aplicación con Google Sheet
    |---|---|---|---|---|---|---|
    | ciudad | referencia | direccionCompleta | whatsapp | deliveryPagado | estado | observaciones |
 
-6. **Configurar las demás hojas (opcional por ahora)**
+6. **Configurar la hoja "Cambios"**
    
-   Las hojas **Ingresos**, **Cambios**, **Categorias**, y **Movimientos** pueden quedar vacías por ahora. Las configuraremos más adelante según las necesidades.
+   En la pestaña **Cambios**, agrega estos encabezados en la **fila 1**:
+   
+   | A | B | C | D | E | F | G | H | I | J |
+   |---|---|---|---|---|---|---|---|---|---|
+   | id | fecha | modeloOriginal | tallaSale | modeloNuevo | tallaEntra | cantidad | whatsapp | observaciones | estado |
 
 ---
 
@@ -228,10 +229,7 @@ Esta guía te llevará paso a paso para conectar tu aplicación con Google Sheet
 
    # Nombre de las hojas en Google Sheets
    SHEET_NAME_PRODUCTOS=Productos
-   SHEET_NAME_CATEGORIAS=Categorias
-   SHEET_NAME_MOVIMIENTOS=Movimientos
    SHEET_NAME_VENTAS=Ventas
-   SHEET_NAME_INGRESOS=Ingresos
    SHEET_NAME_CAMBIOS=Cambios
    ```
 
@@ -346,9 +344,10 @@ Marca cada elemento cuando lo completes:
 - [ ] Cuenta de servicio creada
 - [ ] Archivo JSON de credenciales descargado
 - [ ] Google Sheet creado con el nombre "Amora Inventarios"
-- [ ] Pestañas creadas: Productos, Ventas, Ingresos, Cambios, Categorias, Movimientos
+- [ ] Pestañas creadas: Productos, Ventas, Cambios
 - [ ] Encabezados configurados en la pestaña "Productos"
 - [ ] Encabezados configurados en la pestaña "Ventas"
+- [ ] Encabezados configurados en la pestaña "Cambios"
 - [ ] ID de la hoja copiado
 - [ ] Hoja compartida con la cuenta de servicio (con permisos de Editor)
 - [ ] Archivo `.env` creado

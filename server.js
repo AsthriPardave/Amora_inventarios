@@ -9,16 +9,22 @@ const path = require('path');
 const morgan = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 
 // Importar configuración
 const config = require('./src/config/app.config');
 const googleSheetsConfig = require('./src/config/googleSheets.config');
 
+// Importar middlewares
+const authMiddleware = require('./src/middlewares/auth.middleware');
+
 // Importar rutas
+const authRoutes = require('./src/routes/auth.routes');
 const indexRoutes = require('./src/routes/index.routes');
 const inventarioRoutes = require('./src/routes/inventario.routes');
 const ventasRoutes = require('./src/routes/ventas.routes');
 const productosRoutes = require('./src/routes/productos.routes');
+const ingresosRoutes = require('./src/routes/ingresos.routes');
 const cambiosRoutes = require('./src/routes/cambios.routes');
 const politicasRoutes = require('./src/routes/politicas.routes');
 
@@ -36,6 +42,9 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Configuración de sesiones
+app.use(session(config.session));
+
 // Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -44,6 +53,12 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
 
 // ============ RUTAS ============
+
+// Rutas de autenticación (sin protección)
+app.use('/auth', authRoutes);
+
+// Aplicar middleware de autenticación a todas las rutas siguientes
+app.use(authMiddleware.verificarAutenticacion);
 
 // Ruta principal
 app.use('/', indexRoutes);
@@ -56,6 +71,9 @@ app.use('/ventas', ventasRoutes);
 
 // Rutas de productos
 app.use('/productos', productosRoutes);
+
+// Rutas de ingresos
+app.use('/ingresos', ingresosRoutes);
 
 // Rutas de cambios
 app.use('/cambios', cambiosRoutes);

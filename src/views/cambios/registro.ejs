@@ -38,6 +38,9 @@
                     <p class="text-muted">Primero busca el pedido del cliente por su número de WhatsApp</p>
                     
                     <form action="/cambios/buscar-pedido" method="POST" class="form">
+                        <!-- Token único para prevenir duplicados -->
+                        <input type="hidden" name="formToken" value="<%= Date.now() + '-' + Math.random().toString(36).substr(2, 9) %>">
+                        
                         <div class="form-row">
                             <div class="form-group" style="flex: 1;">
                                 <label for="whatsapp">WhatsApp del Cliente *</label>
@@ -64,31 +67,73 @@
         <% } %>
 
         <!-- Formulario de cambio de talla -->
-        <% if (locals.pedido) { %>
+        <% if (locals.pedidos && pedidos.length > 0) { %>
             <div class="card">
                 <div class="pedido-info">
-                    <h3>✅ Pedido Encontrado</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <strong>Modelo:</strong> <%= pedido.modelo %>
-                        </div>
-                        <div class="info-item">
-                            <strong>Talla Actual:</strong> <%= pedido.talla %>
-                        </div>
-                        <div class="info-item">
-                            <strong>Cantidad:</strong> <%= pedido.cantidad %>
-                        </div>
-                        <div class="info-item">
-                            <strong>WhatsApp:</strong> <%= pedido.whatsapp %>
-                        </div>
-                    </div>
+                    <h3>✅ Pedidos Encontrados (<%= pedidos.length %>)</h3>
+                    <p class="text-muted">Selecciona el pedido que deseas cambiar. Solo se muestran pedidos en estado "Enviado" o "Entregado".</p>
                 </div>
             </div>
 
             <div class="card">
                 <form action="/cambios/registrar" method="POST" class="form">
+                    <!-- Token único para prevenir duplicados -->
+                    <input type="hidden" name="formToken" value="<%= Date.now() + '-' + Math.random().toString(36).substr(2, 9) %>">
+                    <input type="hidden" name="whatsapp" value="<%= whatsapp %>">
+                    
                     <div class="form-section">
-                        <h3>🔄 Datos del Cambio de Talla</h3>
+                        <h3>📦 Selecciona el Pedido a Cambiar</h3>
+                        
+                        <div class="form-group">
+                            <label for="pedidoSeleccionado">Pedido *</label>
+                            <select 
+                                id="pedidoSeleccionado" 
+                                name="pedidoSeleccionado" 
+                                class="form-control" 
+                                required
+                                onchange="cargarDatosPedido()"
+                            >
+                                <option value="">-- Selecciona un pedido --</option>
+                                <% pedidos.forEach((pedido, index) => { %>
+                                    <option 
+                                        value="<%= index %>"
+                                        data-modelo="<%= pedido.modelo %>"
+                                        data-talla="<%= pedido.talla %>"
+                                        data-cantidad="<%= pedido.cantidad %>"
+                                        data-fecha="<%= pedido.fecha %>"
+                                        data-estado="<%= pedido.estado %>"
+                                    >
+                                        <%= pedido.fecha %> - <%= pedido.modelo %> - Talla <%= pedido.talla %> - Cant: <%= pedido.cantidad %> - Estado: <%= pedido.estado %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+
+                        <div id="detallesPedido" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <h4>Detalles del Pedido Seleccionado</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <strong>Modelo Original:</strong> <span id="detalle-modelo"></span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Talla Original:</strong> <span id="detalle-talla"></span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Cantidad:</strong> <span id="detalle-cantidad"></span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Estado:</strong> <span id="detalle-estado"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section" id="seccionCambio" style="display: none;">
+                        <h3>🔄 Datos del Cambio</h3>
+                        
+                        <input type="hidden" id="modeloOriginal" name="modeloOriginal">
+                        <input type="hidden" id="tallaSale" name="tallaSale">
+                        <input type="hidden" id="cantidadOriginal" name="cantidadOriginal">
                         
                         <div class="form-row">
                             <div class="form-group">
@@ -103,92 +148,136 @@
                                 >
                             </div>
 
-                            <div class="form-group">
-                                <label for="cantidad">Cantidad *</label>
+                            <div class="form-group" id="grupoCantidadCambio">
+                                <label for="cantidadCambio">Cantidad a Cambiar *</label>
                                 <input 
                                     type="number" 
-                                    id="cantidad" 
-                                    name="cantidad" 
+                                    id="cantidadCambio" 
+                                    name="cantidadCambio" 
                                     class="form-control"
                                     min="1"
-                                    value="<%= pedido.cantidad %>"
+                                    value="1"
                                     required
                                 >
+                                <small>Máximo: <span id="maxCantidad">1</span> unidad(es)</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <% if (locals.tieneMultiplesModelos) { %>
+                                <div class="form-group">
+                                    <label for="modeloNuevo">Modelo Nuevo (opcional)</label>
+                                    <input 
+                                        type="text" 
+                                        id="modeloNuevo" 
+                                        name="modeloNuevo" 
+                                        class="form-control"
+                                        placeholder="Dejar vacío si solo cambia talla"
+                                    >
+                                    <small>Solo si el cliente quiere cambiar de modelo</small>
+                                </div>
+                            <% } else { %>
+                                <input type="hidden" id="modeloNuevo" name="modeloNuevo" value="">
+                            <% } %>
+
+                            <div class="form-group">
+                                <label for="tallaEntra">Nueva Talla *</label>
+                                <select 
+                                    id="tallaEntra" 
+                                    name="tallaEntra" 
+                                    class="form-control" 
+                                    required
+                                >
+                                    <option value="">-- Selecciona talla --</option>
+                                    <% for(let t = 35; t <= 40; t++) { %>
+                                        <option value="<%= t %>"><%= t %></option>
+                                    <% } %>
+                                </select>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="modelo">Modelo *</label>
-                            <input 
-                                type="text" 
-                                id="modelo" 
-                                name="modelo" 
+                            <label for="observaciones">Observaciones</label>
+                            <textarea 
+                                id="observaciones" 
+                                name="observaciones" 
                                 class="form-control"
-                                value="<%= pedido.modelo %>"
-                                readonly
-                            >
+                                rows="3"
+                                placeholder="Notas adicionales sobre el cambio..."
+                            ></textarea>
                         </div>
-
-                        <div class="cambio-tallas-container">
-                            <div class="talla-box talla-sale">
-                                <label for="tallaSale">Talla que SALE *</label>
-                                <select id="tallaSale" name="tallaSale" class="form-control form-control-lg" required>
-                                    <% for(let t = 35; t <= 40; t++) { %>
-                                        <option value="<%= t %>" <%= t == pedido.talla ? 'selected' : '' %>>
-                                            <%= t %>
-                                        </option>
-                                    <% } %>
-                                </select>
-                                <small>Talla que el cliente devuelve</small>
-                            </div>
-
-                            <div class="arrow-container">
-                                <span class="arrow">➡️</span>
-                            </div>
-
-                            <div class="talla-box talla-entra">
-                                <label for="tallaEntra">Talla que ENTRA *</label>
-                                <select id="tallaEntra" name="tallaEntra" class="form-control form-control-lg" required>
-                                    <option value="">Seleccionar talla</option>
-                                    <% if (locals.tallasDisponibles && tallasDisponibles.length > 0) { %>
-                                        <% tallasDisponibles.forEach(item => { %>
-                                            <option value="<%= item.talla %>">
-                                                <%= item.talla %> (<%= item.stock %> disponibles)
-                                            </option>
-                                        <% }) %>
-                                    <% } else { %>
-                                        <% for(let t = 35; t <= 40; t++) { %>
-                                            <option value="<%= t %>" disabled>
-                                                <%= t %> (sin stock)
-                                            </option>
-                                        <% } %>
-                                    <% } %>
-                                </select>
-                                <small>Talla nueva que se entrega</small>
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="whatsapp" value="<%= pedido.whatsapp %>">
                     </div>
 
-                    <div class="form-actions">
+                    <div class="form-actions" id="botonesAccion" style="display: none;">
                         <button type="submit" class="btn btn-primary">
-                            ✓ Registrar Cambio de Talla
+                            ✅ Registrar Cambio
                         </button>
                         <a href="/cambios/registro" class="btn btn-secondary">
-                            🔍 Buscar Otro Pedido
+                            ❌ Cancelar
                         </a>
                     </div>
                 </form>
             </div>
+
+            <script>
+                function cargarDatosPedido() {
+                    const select = document.getElementById('pedidoSeleccionado');
+                    const selectedOption = select.options[select.selectedIndex];
+                    
+                    if (selectedOption.value === '') {
+                        document.getElementById('detallesPedido').style.display = 'none';
+                        document.getElementById('seccionCambio').style.display = 'none';
+                        document.getElementById('botonesAccion').style.display = 'none';
+                        return;
+                    }
+
+                    // Mostrar detalles
+                    const modelo = selectedOption.dataset.modelo;
+                    const talla = selectedOption.dataset.talla;
+                    const cantidad = parseInt(selectedOption.dataset.cantidad);
+                    const estado = selectedOption.dataset.estado;
+
+                    document.getElementById('detalle-modelo').textContent = modelo;
+                    document.getElementById('detalle-talla').textContent = talla;
+                    document.getElementById('detalle-cantidad').textContent = cantidad;
+                    document.getElementById('detalle-estado').textContent = estado;
+                    document.getElementById('detallesPedido').style.display = 'block';
+
+                    // Cargar datos en campos ocultos
+                    document.getElementById('modeloOriginal').value = modelo;
+                    document.getElementById('tallaSale').value = talla;
+                    document.getElementById('cantidadOriginal').value = cantidad;
+
+                    // Configurar cantidad a cambiar
+                    const inputCantidad = document.getElementById('cantidadCambio');
+                    inputCantidad.max = cantidad;
+                    inputCantidad.value = 1;
+                    document.getElementById('maxCantidad').textContent = cantidad;
+
+                    // Mostrar/ocultar grupo de cantidad según la cantidad del pedido
+                    if (cantidad > 1) {
+                        document.getElementById('grupoCantidadCambio').style.display = 'block';
+                    } else {
+                        document.getElementById('grupoCantidadCambio').style.display = 'none';
+                        inputCantidad.value = 1;
+                    }
+
+                    // Mostrar sección de cambio
+                    document.getElementById('seccionCambio').style.display = 'block';
+                    document.getElementById('botonesAccion').style.display = 'flex';
+                }
+            </script>
         <% } %>
 
         <div class="info-box">
             <h4>💡 Información Importante</h4>
             <ul>
+                <li>Solo se muestran pedidos en estado "Enviado" o "Entregado"</li>
                 <li>El cambio de talla debe registrarse cuando el cliente devuelve el producto</li>
                 <li>La <strong>talla que sale</strong> es la que el cliente devuelve (se suma al inventario)</li>
                 <li>La <strong>talla que entra</strong> es la nueva que se entrega al cliente (se descuenta del inventario)</li>
+                <li>Si el pedido tiene varias unidades, puedes elegir cuántas cambiar</li>
+                <li>El campo de modelo solo aparece si el cliente ha comprado diferentes modelos</li>
                 <li>El estado inicial del cambio es <span class="badge badge-warning">Pendiente</span></li>
                 <li>Una vez completado el cambio físico, actualiza el estado a <span class="badge badge-success">Realizado</span></li>
             </ul>
