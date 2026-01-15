@@ -82,77 +82,44 @@
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="tipoVia">Tipo de Vía *</label>
-                            <select id="tipoVia" name="tipoVia" class="form-control" required>
-                                <option value="">Seleccionar</option>
-                                <option value="Av." <%= locals.formData?.tipoVia === 'Av.' ? 'selected' : '' %>>Avenida</option>
-                                <option value="Jr." <%= locals.formData?.tipoVia === 'Jr.' ? 'selected' : '' %>>Jirón</option>
-                                <option value="Calle" <%= locals.formData?.tipoVia === 'Calle' ? 'selected' : '' %>>Calle</option>
-                                <option value="Psje." <%= locals.formData?.tipoVia === 'Psje.' ? 'selected' : '' %>>Pasaje</option>
-                                <option value="Prol." <%= locals.formData?.tipoVia === 'Prol.' ? 'selected' : '' %>>Prolongación</option>
+                            <label for="departamento">Departamento *</label>
+                            <select id="departamento" name="departamento" class="form-control" required>
+                                <option value="">Seleccionar departamento</option>
+                                <% Object.keys(ubigeo).sort().forEach(function(departamento) { %>
+                                    <option value="<%= departamento %>" <%= locals.formData?.departamento === departamento ? 'selected' : '' %>>
+                                        <%= departamento %>
+                                    </option>
+                                <% }) %>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="nombreVia">Nombre de la Vía *</label>
-                            <input 
-                                type="text" 
-                                id="nombreVia" 
-                                name="nombreVia" 
-                                class="form-control"
-                                placeholder="Ej: Los Pinos"
-                                value="<%= locals.formData?.nombreVia || '' %>"
-                                required
-                            >
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="numero">Número *</label>
-                            <input 
-                                type="text" 
-                                id="numero" 
-                                name="numero" 
-                                class="form-control"
-                                placeholder="Ej: 123"
-                                value="<%= locals.formData?.numero || '' %>"
-                                required
-                            >
+                            <label for="provincia">Provincia *</label>
+                            <select id="provincia" name="provincia" class="form-control" required disabled>
+                                <option value="">Primero selecciona un departamento</option>
+                            </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="interior">Interior / Dpto</label>
-                            <input 
-                                type="text" 
-                                id="interior" 
-                                name="interior" 
-                                class="form-control"
-                                placeholder="Ej: 201, A-5"
-                                value="<%= locals.formData?.interior || '' %>"
-                            >
+                            <label for="distrito">Distrito *</label>
+                            <select id="distrito" name="distrito" class="form-control" required disabled>
+                                <option value="">Primero selecciona una provincia</option>
+                            </select>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="ciudad">Distrito / Provincia *</label>
-                        <select id="ciudad" name="ciudad" class="form-control" required>
-                            <option value="">Seleccionar distrito/provincia</option>
-                            <optgroup label="Lima Metropolitana">
-                                <% ciudades.LIMA.forEach(function(ciudad) { %>
-                                    <option value="<%= ciudad %>" <%= locals.formData?.ciudad === ciudad ? 'selected' : '' %>>
-                                        <%= ciudad %>
-                                    </option>
-                                <% }) %>
-                            </optgroup>
-                            <optgroup label="Provincias">
-                                <% ciudades.PROVINCIAS.forEach(function(ciudad) { %>
-                                    <option value="<%= ciudad %>" <%= locals.formData?.ciudad === ciudad ? 'selected' : '' %>>
-                                        <%= ciudad %>
-                                    </option>
-                                <% }) %>
-                            </optgroup>
-                        </select>
+                        <label for="direccion">Dirección Completa *</label>
+                        <input 
+                            type="text" 
+                            id="direccion" 
+                            name="direccion" 
+                            class="form-control"
+                            placeholder="Ej: Av. Los Pinos 456 Int. 301"
+                            value="<%= locals.formData?.direccion || '' %>"
+                            required
+                        >
+                        <small>Ingresa la dirección completa (calle, número, interior, etc.)</small>
                     </div>
 
                     <div class="form-group">
@@ -253,13 +220,12 @@
         <div class="info-box">
             <h4>📦 Ejemplo de Dirección Completa</h4>
             <ul>
-                <li><strong>Tipo de Vía:</strong> Av.</li>
-                <li><strong>Nombre:</strong> Los Rosales</li>
-                <li><strong>Número:</strong> 456</li>
-                <li><strong>Interior:</strong> Dpto 301 (opcional)</li>
+                <li><strong>Departamento:</strong> Lima</li>
+                <li><strong>Provincia:</strong> Lima</li>
                 <li><strong>Distrito:</strong> San Isidro</li>
+                <li><strong>Dirección:</strong> Av. Los Rosales 456 Int. Dpto 301</li>
                 <li><strong>Referencia:</strong> Frente al parque principal (opcional)</li>
-                <li><strong>Resultado:</strong> Av. Los Rosales 456 Int. Dpto 301, San Isidro</li>
+                <li><strong>Resultado final:</strong> Av. Los Rosales 456 Int. Dpto 301, San Isidro, Lima, Lima</li>
             </ul>
         </div>
     </main>
@@ -268,6 +234,86 @@
 
     <script src="/js/main.js"></script>
     <script>
+        // Datos de ubigeo desde el servidor
+        const ubigeoData = <%- JSON.stringify(ubigeo || {}) %>;
+
+        // Referencias a los selectores
+        const selectDepartamento = document.getElementById('departamento');
+        const selectProvincia = document.getElementById('provincia');
+        const selectDistrito = document.getElementById('distrito');
+
+        // Evento cuando se selecciona un departamento
+        selectDepartamento.addEventListener('change', function() {
+            const departamento = this.value;
+            
+            // Limpiar y deshabilitar provincia y distrito
+            selectProvincia.innerHTML = '<option value="">Seleccionar provincia</option>';
+            selectDistrito.innerHTML = '<option value="">Primero selecciona una provincia</option>';
+            selectDistrito.disabled = true;
+            
+            if (departamento && ubigeoData[departamento]) {
+                const provincias = Object.keys(ubigeoData[departamento]).sort();
+                
+                provincias.forEach(function(provincia) {
+                    const option = document.createElement('option');
+                    option.value = provincia;
+                    option.textContent = provincia;
+                    selectProvincia.appendChild(option);
+                });
+                
+                selectProvincia.disabled = false;
+            } else {
+                selectProvincia.disabled = true;
+                selectProvincia.innerHTML = '<option value="">Primero selecciona un departamento</option>';
+            }
+        });
+
+        // Evento cuando se selecciona una provincia
+        selectProvincia.addEventListener('change', function() {
+            const departamento = selectDepartamento.value;
+            const provincia = this.value;
+            
+            // Limpiar distrito
+            selectDistrito.innerHTML = '<option value="">Seleccionar distrito</option>';
+            
+            if (departamento && provincia && ubigeoData[departamento] && ubigeoData[departamento][provincia]) {
+                const distritos = ubigeoData[departamento][provincia];
+                
+                distritos.forEach(function(distrito) {
+                    const option = document.createElement('option');
+                    option.value = distrito;
+                    option.textContent = distrito;
+                    selectDistrito.appendChild(option);
+                });
+                
+                selectDistrito.disabled = false;
+            } else {
+                selectDistrito.disabled = true;
+            }
+        });
+
+        // Restaurar valores si hay formData (en caso de error)
+        <% if (locals.formData) { %>
+            const formData = <%- JSON.stringify(formData) %>;
+            if (formData.departamento) {
+                selectDepartamento.value = formData.departamento;
+                selectDepartamento.dispatchEvent(new Event('change'));
+                
+                setTimeout(() => {
+                    if (formData.provincia) {
+                        selectProvincia.value = formData.provincia;
+                        selectProvincia.dispatchEvent(new Event('change'));
+                        
+                        setTimeout(() => {
+                            if (formData.distrito) {
+                                selectDistrito.value = formData.distrito;
+                            }
+                        }, 100);
+                    }
+                }, 100);
+            }
+        <% } %>
+
         // Mensajes predefinidos
         const mensajes = {
             lima: 'Pedido confirmado con pago de delivery S/10. El pago total se realiza al momento de la entrega.',

@@ -5,21 +5,7 @@
 
 const googleSheetsService = require('../services/googleSheets.service');
 const config = require('../config/app.config');
-
-// Ciudades disponibles para delivery
-const CIUDADES = {
-    LIMA: [
-        'Lima Centro', 'San Isidro', 'Miraflores', 'Surco', 'La Molina',
-        'San Borja', 'Barranco', 'Chorrillos', 'Villa El Salvador',
-        'San Juan de Miraflores', 'Villa María del Triunfo', 'Los Olivos',
-        'San Martín de Porres', 'Independencia', 'Comas', 'Callao'
-    ],
-    PROVINCIAS: [
-        'Arequipa', 'Cusco', 'Trujillo', 'Chiclayo', 'Piura', 'Iquitos',
-        'Huancayo', 'Tacna', 'Puno', 'Ica', 'Cajamarca', 'Ayacucho',
-        'Tumbes', 'Tarapoto', 'Chimbote', 'Sullana', 'Juliaca', 'Pucallpa'
-    ]
-};
+const UBIGEO_PERU = require('../config/ubigeo.config');
 
 class VentasController {
     /**
@@ -94,7 +80,7 @@ class VentasController {
         
         res.render('ventas/registro', {
             title: 'Registrar Venta',
-            ciudades: CIUDADES,
+            ubigeo: UBIGEO_PERU,
             modelos: modelos,
             inventario: inventario,
             error: null,
@@ -113,7 +99,7 @@ class VentasController {
         try {
             const { 
                 modelo, talla, cantidad, 
-                tipoVia, nombreVia, numero, interior, ciudad, referencia,
+                direccion, departamento, provincia, distrito, referencia,
                 deliveryPagado, whatsapp, observaciones,
                 formToken
             } = req.body;
@@ -143,7 +129,7 @@ class VentasController {
                         console.warn('⚠️ Duplicado detectado - Venta ignorada');
                         return res.render('ventas/registro', {
                             title: 'Registrar Venta',
-                            ciudades: CIUDADES,
+                            ubigeo: UBIGEO_PERU,
                             modelos: await VentasController.obtenerModelosDisponibles(),
                             inventario: await VentasController.obtenerInventarioCompleto(),
                             error: null,
@@ -158,7 +144,7 @@ class VentasController {
             if (deliveryPagado !== 'true' && deliveryPagado !== true) {
                 return res.render('ventas/registro', {
                     title: 'Registrar Venta',
-                    ciudades: CIUDADES,
+                    ubigeo: UBIGEO_PERU,
                     modelos: await VentasController.obtenerModelosDisponibles(),
                     inventario: await VentasController.obtenerInventarioCompleto(),
                     error: '⚠️ No se puede registrar la venta. El delivery debe estar pagado.',
@@ -171,7 +157,7 @@ class VentasController {
             if (!modelo || !talla || !cantidad) {
                 return res.render('ventas/registro', {
                     title: 'Registrar Venta',
-                    ciudades: CIUDADES,
+                    ubigeo: UBIGEO_PERU,
                     modelos: await VentasController.obtenerModelosDisponibles(),
                     inventario: await VentasController.obtenerInventarioCompleto(),
                     error: '⚠️ Los datos del producto son obligatorios.',
@@ -181,10 +167,10 @@ class VentasController {
             }
 
             // Validar datos de dirección
-            if (!tipoVia || !nombreVia || !numero || !ciudad || !whatsapp) {
+            if (!direccion || !departamento || !provincia || !distrito || !whatsapp) {
                 return res.render('ventas/registro', {
                     title: 'Registrar Venta',
-                    ciudades: CIUDADES,
+                    ubigeo: UBIGEO_PERU,
                     modelos: await VentasController.obtenerModelosDisponibles(),
                     inventario: await VentasController.obtenerInventarioCompleto(),
                     error: '⚠️ Los datos de envío (dirección completa y WhatsApp) son obligatorios.',
@@ -198,7 +184,7 @@ class VentasController {
             if (tallaNum < 35 || tallaNum > 40) {
                 return res.render('ventas/registro', {
                     title: 'Registrar Venta',
-                    ciudades: CIUDADES,
+                    ubigeo: UBIGEO_PERU,
                     modelos: await VentasController.obtenerModelosDisponibles(),
                     inventario: await VentasController.obtenerInventarioCompleto(),
                     error: '⚠️ La talla debe estar entre 35 y 40.',
@@ -208,7 +194,7 @@ class VentasController {
             }
 
             // Construir dirección completa
-            const direccionCompleta = `${tipoVia} ${nombreVia} ${numero}${interior ? ' Int. ' + interior : ''}, ${ciudad}`;
+            const direccionCompleta = `${direccion}, ${distrito}, ${provincia}, ${departamento}`;
             const fecha = new Date();
             const fechaFormateada = fecha.toISOString();
 
@@ -218,11 +204,10 @@ class VentasController {
                 modelo,
                 talla,
                 cantidad,
-                tipoVia,
-                nombreVia,
-                numero,
-                interior || '',
-                ciudad,
+                direccion,
+                departamento,
+                provincia,
+                distrito,
                 referencia || '',
                 direccionCompleta,
                 whatsapp,
@@ -250,7 +235,7 @@ class VentasController {
 
             res.render('ventas/registro', {
                 title: 'Registrar Venta',
-                ciudades: CIUDADES,
+                ubigeo: UBIGEO_PERU,
                 modelos: await VentasController.obtenerModelosDisponibles(),
                 inventario: await VentasController.obtenerInventarioCompleto(),
                 error: null,
@@ -262,7 +247,7 @@ class VentasController {
             console.error('Error al registrar venta:', error);
             res.render('ventas/registro', {
                 title: 'Registrar Venta',
-                ciudades: CIUDADES,
+                ubigeo: UBIGEO_PERU,
                 modelos: await VentasController.obtenerModelosDisponibles(),
                 inventario: await VentasController.obtenerInventarioCompleto(),
                 error: '❌ Error al registrar la venta. Por favor, intente nuevamente.',
