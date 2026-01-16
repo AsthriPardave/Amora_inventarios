@@ -192,8 +192,8 @@
                             <th>Modelo</th>
                             <th>Talla</th>
                             <th>Cant.</th>
-                            <th>Dirección de Envío</th>
-                            <th>Ciudad</th>
+                            <th>Departamento</th>
+                            <th>Dirección Completa</th>
                             <th>WhatsApp</th>
                             <th>Delivery</th>
                             <th>Estado</th>
@@ -226,17 +226,29 @@
                             <td><%= venta.talla %></td>
                             <td><%= venta.cantidad %></td>
                             <td>
-                                <% if (venta.direccionCompleta) { %>
-                                    <%= venta.direccionCompleta %>
+                                <% if (venta.departamento && venta.provincia && venta.ciudad) { %>
+                                    <%= venta.departamento %> - <%= venta.provincia %> - <%= venta.ciudad %>
+                                <% } else if (venta.ciudad) { %>
+                                    <%= venta.ciudad %>
                                 <% } else { %>
-                                    <%= venta.tipoVia %> <%= venta.nombreVia %> <%= venta.numero %>
-                                    <%= venta.interior ? 'Int. ' + venta.interior : '' %>
-                                <% } %>
-                                <% if (venta.referencia) { %>
-                                    <br><small style="color: #6c757d;">Ref: <%= venta.referencia %></small>
+                                    <span class="text-muted">No especificado</span>
                                 <% } %>
                             </td>
-                            <td><%= venta.ciudad %></td>
+                            <td>
+                                <% if (venta.direccion) { %>
+                                    <%= venta.direccion %>
+                                    <% if (venta.referencia) { %>
+                                        <br><small style="color: #6c757d;">Ref: <%= venta.referencia %></small>
+                                    <% } %>
+                                <% } else if (venta.direccionCompleta) { %>
+                                    <%= venta.direccionCompleta %>
+                                    <% if (venta.referencia) { %>
+                                        <br><small style="color: #6c757d;">Ref: <%= venta.referencia %></small>
+                                    <% } %>
+                                <% } else { %>
+                                    <span class="text-muted">No especificado</span>
+                                <% } %>
+                            </td>
                             <td><%= venta.whatsapp %></td>
                             <td>
                                 <% if (venta.deliveryPagado === 'Sí' || venta.deliveryPagado === true || venta.deliveryPagado === 'true') { %>

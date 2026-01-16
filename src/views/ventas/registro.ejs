@@ -33,8 +33,22 @@
                 <input type="hidden" name="formToken" value="<%= Date.now() + '-' + Math.random().toString(36).substr(2, 9) %>">
                 
                 <div class="form-section">
-                    <h3>👟 Información del Producto</h3>
+                    <h3>� Información de Venta</h3>
                     
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input 
+                            type="text" 
+                            id="fecha" 
+                            name="fecha" 
+                            class="form-control"
+                            value="<%= new Date().toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) %>"
+                            readonly
+                            style="background-color: #f5f7fa;"
+                        >
+                        <small>Fecha automática de registro</small>
+                    </div>
+
                     <div class="form-group">
                         <label for="modelo">Modelo *</label>
                         <select 
@@ -50,7 +64,6 @@
                                 </option>
                             <% }) %>
                         </select>
-                        <small>Selecciona el modelo del producto a vender</small>
                     </div>
 
                     <div class="form-row">
@@ -78,13 +91,13 @@
                 </div>
 
                 <div class="form-section">
-                    <h3>🚚 Información de Envío</h3>
+                    <h3>📍 Dirección de Envío</h3>
                     
                     <div class="form-row">
                         <div class="form-group">
                             <label for="departamento">Departamento *</label>
                             <select id="departamento" name="departamento" class="form-control" required>
-                                <option value="">Seleccionar departamento</option>
+                                <option value="">Seleccionar</option>
                                 <% Object.keys(ubigeo).sort().forEach(function(departamento) { %>
                                     <option value="<%= departamento %>" <%= locals.formData?.departamento === departamento ? 'selected' : '' %>>
                                         <%= departamento %>
@@ -96,20 +109,20 @@
                         <div class="form-group">
                             <label for="provincia">Provincia *</label>
                             <select id="provincia" name="provincia" class="form-control" required disabled>
-                                <option value="">Primero selecciona un departamento</option>
+                                <option value="">Seleccionar</option>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label for="distrito">Distrito *</label>
                             <select id="distrito" name="distrito" class="form-control" required disabled>
-                                <option value="">Primero selecciona una provincia</option>
+                                <option value="">Seleccionar</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="direccion">Dirección Completa *</label>
+                        <label for="direccion">Dirección *</label>
                         <input 
                             type="text" 
                             id="direccion" 
@@ -119,11 +132,11 @@
                             value="<%= locals.formData?.direccion || '' %>"
                             required
                         >
-                        <small>Ingresa la dirección completa (calle, número, interior, etc.)</small>
+                        <small>Dirección completa: calle, número, interior, etc.</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="referencia">Referencia</label>
+                        <label for="referencia">Referencias</label>
                         <input 
                             type="text" 
                             id="referencia" 
@@ -132,45 +145,15 @@
                             placeholder="Ej: Frente al parque, al costado de la farmacia"
                             value="<%= locals.formData?.referencia || '' %>"
                         >
-                        <small>Ayuda al repartidor a encontrar la dirección más fácilmente</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                id="deliveryPagado" 
-                                name="deliveryPagado" 
-                                value="true"
-                                <%= locals.formData?.deliveryPagado ? 'checked' : '' %>
-                            >
-                            <span class="checkbox-text">✓ Delivery Pagado *</span>
-                        </label>
-                        <small class="text-warning">⚠️ El delivery debe estar pagado para registrar la venta y descontar del stock</small>
-                    </div>
-
-                    <!-- Mensajes de confirmación para copiar -->
-                    <div class="form-group">
-                        <label>💬 Mensajes de Confirmación (clic para copiar)</label>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('lima')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
-                                🇵🇪 Lima: "Pedido confirmado con pago de delivery S/10. El pago total se realiza al momento de la entrega."
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('provincia')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
-                                🚚 Provincia: "Pedido confirmado. Envío tras validación del pago correspondiente."
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('cambio')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
-                                🔄 Cambio: "Enviar video detallado del calzado para evaluación."
-                            </button>
-                        </div>
+                        <small>Puntos de referencia para facilitar la entrega</small>
                     </div>
                 </div>
 
                 <div class="form-section">
-                    <h3>👤 Datos del Cliente</h3>
+                    <h3>📱 Datos del Cliente y Estado</h3>
                     
                     <div class="form-group">
-                        <label for="whatsapp">WhatsApp del Cliente *</label>
+                        <label for="whatsapp">WhatsApp *</label>
                         <input 
                             type="tel" 
                             id="whatsapp" 
@@ -185,6 +168,35 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="checkbox-label">
+                            <input 
+                                type="checkbox" 
+                                id="deliveryPagado" 
+                                name="deliveryPagado" 
+                                value="true"
+                                checked
+                                disabled
+                            >
+                            <span class="checkbox-text">✓ Delivery Pagado (Obligatorio)</span>
+                        </label>
+                        <input type="hidden" name="deliveryPagado" value="true">
+                        <small class="text-info">ℹ️ El delivery debe estar pagado para registrar la venta</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="estado">Estado</label>
+                        <input 
+                            type="text" 
+                            id="estado" 
+                            class="form-control"
+                            value="Pendiente de envío"
+                            readonly
+                            style="background-color: #f5f7fa;"
+                        >
+                        <small>Estado automático al registrar</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="observaciones">Observaciones</label>
                         <textarea 
                             id="observaciones" 
@@ -193,6 +205,22 @@
                             rows="3"
                             placeholder="Cualquier detalle adicional sobre esta venta"
                         ><%= locals.formData?.observaciones || '' %></textarea>
+                    </div>
+
+                    <!-- Mensajes de confirmación para copiar -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>💬 Mensajes de Confirmación (clic para copiar)</label>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('lima')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
+                                🇵🇪 Lima: "Pedido confirmado con pago de delivery S/10. El pago total se realiza al momento de la entrega."
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('provincia')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
+                                🚚 Provincia: "Pedido confirmado. Envío tras validación del pago correspondiente."
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="copiarMensaje('cambio')" style="text-align: left; font-size: 0.9rem; padding: 0.5rem;">
+                                🔄 Cambio: "Enviar video detallado del calzado para evaluación."
+                            </button>
+                        </div>
                     </div>
                 </div>
 

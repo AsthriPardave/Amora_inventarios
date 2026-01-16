@@ -199,21 +199,22 @@ class VentasController {
             const fechaFormateada = fecha.toISOString();
 
             // Preparar datos para Google Sheets
+            // Orden: Fecha, Modelo, Talla, Cantidad, Departamento, Provincia, Distrito, Dirección, Referencia, Dirección Completa, WhatsApp, Delivery Pagado, Estado, Observaciones
             const ventaData = [
-                fechaFormateada,
-                modelo,
-                talla,
-                cantidad,
-                direccion,
-                departamento,
-                provincia,
-                distrito,
-                referencia || '',
-                direccionCompleta,
-                whatsapp,
-                'Sí', // deliveryPagado
-                'Pendiente de envío', // estado
-                observaciones || ''
+                fechaFormateada,     // A: Fecha
+                modelo,              // B: Modelo
+                talla,               // C: Talla
+                cantidad,            // D: Cantidad
+                departamento,        // E: Departamento
+                provincia,           // F: Provincia
+                distrito,            // G: Distrito
+                direccion,           // H: Dirección exacta
+                referencia || '',    // I: Referencia
+                direccionCompleta,   // J: Dirección completa
+                whatsapp,            // K: WhatsApp
+                'Sí',                // L: Delivery Pagado (siempre Sí)
+                'Pendiente de envío', // M: Estado
+                observaciones || ''   // N: Observaciones
             ];
 
             // Guardar en Google Sheets
@@ -272,24 +273,23 @@ class VentasController {
             
             if (rows && rows.length > 1) {
                 // Convertir filas a objetos
-                const headers = rows[0];
+                // Orden: A=Fecha, B=Modelo, C=Talla, D=Cantidad, E=Departamento, F=Provincia, G=Distrito, H=Dirección, I=Referencia, J=Dir.Completa, K=WhatsApp, L=DeliveryPagado, M=Estado, N=Observaciones
                 ventas = rows.slice(1).map(row => {
                     return {
-                        fecha: row[0] || '',
-                        modelo: row[1] || '',
-                        talla: row[2] || '',
-                        cantidad: row[3] || '',
-                        tipoVia: row[4] || '',
-                        nombreVia: row[5] || '',
-                        numero: row[6] || '',
-                        interior: row[7] || '',
-                        ciudad: row[8] || '',
-                        referencia: row[9] || '',
-                        direccionCompleta: row[10] || '',
-                        whatsapp: row[11] || '',
-                        deliveryPagado: row[12] || '',
-                        estado: row[13] || 'Pendiente de envío',
-                        observaciones: row[14] || ''
+                        fecha: row[0] || '',           // A
+                        modelo: row[1] || '',          // B
+                        talla: row[2] || '',           // C
+                        cantidad: row[3] || '',        // D
+                        departamento: row[4] || '',    // E
+                        provincia: row[5] || '',       // F
+                        ciudad: row[6] || '',          // G (distrito)
+                        direccion: row[7] || '',       // H (dirección exacta)
+                        referencia: row[8] || '',      // I
+                        direccionCompleta: row[9] || '', // J
+                        whatsapp: row[10] || '',       // K
+                        deliveryPagado: row[11] || '', // L
+                        estado: row[12] || 'Pendiente de envío', // M
+                        observaciones: row[13] || ''   // N
                     };
                 });
             }
@@ -338,15 +338,15 @@ class VentasController {
             }
 
             const filaActual = rows[rowIndex - 1];
-            const deliveryAnterior = filaActual[12]; // Estado anterior del delivery
+            const deliveryAnterior = filaActual[11]; // Estado anterior del delivery (columna L, índice 11)
 
             // Actualizar solo los campos de delivery y estado
             const filaActualizada = [...filaActual];
             if (deliveryPagado !== undefined) {
-                filaActualizada[12] = deliveryPagado; // Columna M (índice 12)
+                filaActualizada[11] = deliveryPagado; // Columna L (índice 11)
             }
             if (estado !== undefined) {
-                filaActualizada[13] = estado; // Columna N (índice 13)
+                filaActualizada[12] = estado; // Columna M (índice 12)
             }
 
             // Si el delivery cambia de No/Pendiente a Sí/Pagado, descontar stock
