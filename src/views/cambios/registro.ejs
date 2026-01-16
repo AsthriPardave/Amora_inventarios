@@ -189,10 +189,17 @@
                                     required
                                 >
                                     <option value="">-- Selecciona talla --</option>
-                                    <% for(let t = 35; t <= 40; t++) { %>
-                                        <option value="<%= t %>"><%= t %></option>
+                                    <% if (locals.inventario) { %>
+                                        <% for(let t = 35; t <= 40; t++) { %>
+                                            <option value="<%= t %>" data-talla="<%= t %>"><%= t %></option>
+                                        <% } %>
+                                    <% } else { %>
+                                        <% for(let t = 35; t <= 40; t++) { %>
+                                            <option value="<%= t %>"><%= t %></option>
+                                        <% } %>
                                     <% } %>
                                 </select>
+                                <small id="stockInfo" class="text-muted">Selecciona una talla para ver stock disponible</small>
                             </div>
                         </div>
 
@@ -287,6 +294,57 @@
     <%- include('../partials/footer') %>
 
     <script src="/js/main.js"></script>
+    
+    <% if (locals.inventario) { %>
+    <script>
+        // Datos de inventario desde el servidor
+        const inventario = <%- JSON.stringify(inventario || {}) %>;
+        
+        // Actualizar opciones de talla según stock disponible
+        function actualizarTallasDisponibles() {
+            const modeloSeleccionado = document.getElementById('modeloOriginal').value || 
+                                       document.getElementById('modeloNuevo')?.value;
+            const tallaSelect = document.getElementById('tallaEntra');
+            const stockInfo = document.getElementById('stockInfo');
+            
+            if (!modeloSeleccionado || !inventario[modeloSeleccionado]) {
+                return;
+            }
+            
+            // Actualizar información de stock cuando se selecciona una talla
+            tallaSelect.addEventListener('change', function() {
+                const tallaSeleccionada = parseInt(this.value);
+                const stock = inventario[modeloSeleccionado]?.[tallaSeleccionada] || 0;
+                
+                if (stock === 0) {
+                    stockInfo.innerHTML = '<span style="color: #e74c3c;">⚠️ Sin stock disponible para esta talla</span>';
+                    this.setCustomValidity('No hay stock disponible para esta talla');
+                } else if (stock < 3) {
+                    stockInfo.innerHTML = `<span style="color: #f39c12;">⚠️ Stock bajo: ${stock} unidad(es) disponible(s)</span>`;
+                    this.setCustomValidity('');
+                } else {
+                    stockInfo.innerHTML = `<span style="color: #27ae60;">✓ Stock disponible: ${stock} unidad(es)</span>`;
+                    this.setCustomValidity('');
+                }
+            });
+        }
+        
+        // Llamar cuando se carga un pedido
+        const pedidoSelect = document.getElementById('pedidoSeleccionado');
+        if (pedidoSelect) {
+            pedidoSelect.addEventListener('change', function() {
+                setTimeout(actualizarTallasDisponibles, 100);
+            });
+        }
+        
+        // Actualizar cuando cambia el modelo nuevo
+        const modeloNuevoInput = document.getElementById('modeloNuevo');
+        if (modeloNuevoInput) {
+            modeloNuevoInput.addEventListener('change', actualizarTallasDisponibles);
+        }
+    </script>
+    <% } %>
+    
     <script>
         // Validar que las tallas no sean iguales
         document.querySelector('form[action="/cambios/registrar"]')?.addEventListener('submit', function(e) {

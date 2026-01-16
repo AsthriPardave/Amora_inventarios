@@ -8,6 +8,40 @@ const config = require('../config/app.config');
 
 class CambiosController {
     /**
+     * Obtener inventario completo con stock por talla
+     */
+    static async obtenerInventarioCompleto() {
+        try {
+            const rows = await googleSheetsService.readSheet(
+                config.sheetNames.productos,
+                'A:J'
+            );
+
+            const inventario = {};
+            
+            if (rows && rows.length > 1) {
+                rows.slice(1).forEach(row => {
+                    const modelo = row[1] || '';
+                    if (modelo) {
+                        inventario[modelo] = {};
+                        // Procesar tallas (columnas D a I = índices 3 a 8)
+                        for (let i = 0; i < 6; i++) {
+                            const talla = 35 + i;
+                            const stock = parseInt(row[3 + i]) || 0;
+                            inventario[modelo][talla] = stock;
+                        }
+                    }
+                });
+            }
+
+            return inventario;
+        } catch (error) {
+            console.error('Error al obtener inventario completo:', error);
+            return {};
+        }
+    }
+
+    /**
      * Mostrar lista de cambios de talla
      */
     static async listarCambios(req, res) {
@@ -89,14 +123,16 @@ class CambiosController {
             let pedidos = [];
             
             if (rows && rows.length > 1) {
-                // Buscar todos los pedidos por WhatsApp (columna L, índice 11)
-                // Solo incluir los que estén en estado "Enviado" o "Entregado"
+                // Buscar todos los pedidos por WhatsApp
+                // Nuevo formato: A=Fecha, B=Modelo, C=Talla, D=Cantidad, E=Departamento, F=Provincia, G=Distrito, H=Dirección, I=Referencia, J=Dir.Completa, K=WhatsApp, L=DeliveryPagado, M=Estado, N=Observaciones
+                // WhatsApp está en índice 10 (columna K)
+                // Estado está en índice 12 (columna M)
                 const modelosUnicos = new Set();
                 
                 for (let i = 1; i < rows.length; i++) {
-                    const estadoEnvio = rows[i][13] || 'Pendiente de envío';
+                    const estadoEnvio = rows[i][12] || 'Pendiente de envío'; // Columna M (índice 12)
                     
-                    if (rows[i][11] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) {
+                    if (rows[i][10] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) { // Columna K (índice 10)
                         const modelo = rows[i][1] || '';
                         modelosUnicos.add(modelo);
                         
@@ -108,7 +144,7 @@ class CambiosController {
                             cantidad: parseInt(rows[i][3]) || 1,
                             whatsapp: whatsapp,
                             estado: estadoEnvio,
-                            deliveryPagado: rows[i][12] || ''
+                            deliveryPagado: rows[i][11] || '' // Columna L (índice 11)
                         });
                     }
                 }
@@ -126,6 +162,9 @@ class CambiosController {
                     });
                 }
 
+                // Obtener inventario completo para validar stock disponible
+                const inventario = await CambiosController.obtenerInventarioCompleto();
+
                 res.render('cambios/registro', {
                     title: 'Registrar Cambio de Talla',
                     error: null,
@@ -133,6 +172,7 @@ class CambiosController {
                     pedidos: pedidos,
                     tieneMultiplesModelos: tieneMultiplesModelos,
                     whatsapp: whatsapp,
+                    inventario: inventario,
                     formData: null
                 });
                 
@@ -239,6 +279,24 @@ class CambiosController {
                 return res.render('cambios/registro', {
                     title: 'Registrar Cambio de Talla',
                     error: '⚠️ Las tallas deben estar entre 35 y 40.',
+                    success: null,
+                    pedidos: null,
+                    tieneMultiplesModelos: false,
+                    formData: req.body
+                });
+            }
+
+            // Determinar el modelo final (nuevo o el original si no se especificó)
+            const modeloFinal = modeloNuevo && modeloNuevo.trim() !== '' ? modeloNuevo.trim() : modeloOriginal.trim();
+
+            // VALIDAR STOCK DISPONIBLE para la talla de destino
+            const inventario = await CambiosController.obtenerInventarioCompleto();
+            const stockDisponible = inventario[modeloFinal]?.[tallaEntraNum] || 0;
+            
+            if (stockDisponible < cantidadCambioNum) {
+                return res.render('cambios/registro', {
+                    title: 'Registrar Cambio de Talla',
+                    error: `⚠️ No hay suficiente stock disponible. Stock actual del modelo "${modeloFinal}" talla ${tallaEntraNum}: ${stockDisponible} unidad(es). Necesitas: ${cantidadCambioNum}.`,
                     success: null,
                     pedidos: null,
                     tieneMultiplesModelos: false,
