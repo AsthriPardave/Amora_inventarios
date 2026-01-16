@@ -223,7 +223,7 @@ class VentasController {
                 [ventaData]
             );
 
-            console.log('Venta registrada en Google Sheets:', ventaData);
+            console.log('Venta registrada:', ventaData);
 
             // DESCONTAR STOCK - Ya que el delivery está pagado
             try {
