@@ -306,9 +306,6 @@ class CambiosController {
 
             // Generar ID único
             const id = Date.now().toString();
-            
-            // Determinar el modelo final (nuevo o el original si no se especificó)
-            const modeloFinal = modeloNuevo && modeloNuevo.trim() !== '' ? modeloNuevo.trim() : modeloOriginal.trim();
 
             // Preparar datos para Google Sheets
             // Columnas: id, fecha, modeloOriginal, tallaSale, modeloNuevo, tallaEntra, cantidad, whatsapp, observaciones, estado
