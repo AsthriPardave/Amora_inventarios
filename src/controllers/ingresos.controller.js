@@ -172,7 +172,7 @@ class ProductosController {
             res.render('productos/registro', {
                 title: 'Registrar Producto',
                 error: null,
-                success: `✅ Producto registrado exitosamente en Google Sheets. ${totalUnidades} unidades agregadas al stock.`,
+                success: `✅ Producto registrado exitosamente. ${totalUnidades} unidades agregadas al stock.`,
                 formData: null
             });
 

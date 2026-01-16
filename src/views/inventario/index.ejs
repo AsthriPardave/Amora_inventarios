@@ -13,7 +13,7 @@
         <div class="page-header">
             <h1>📦 <%= title %></h1>
             <div class="header-actions">
-                <a href="/ingresos/registrar" class="btn btn-primary">+ Registrar Ingreso</a>
+                <a href="/productos/registrar" class="btn btn-primary">+ Agregar nuevo producto</a>
             </div>
         </div>
 
@@ -43,16 +43,6 @@
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="filtroStock">Stock</label>
-                            <select id="filtroStock" class="form-control">
-                                <option value="">Todos</option>
-                                <option value="disponible">Con stock</option>
-                                <option value="bajo">Stock bajo (&lt; 5)</option>
-                                <option value="agotado">Sin stock</option>
-                            </select>
-                        </div>
-
                         <div class="form-group align-end">
                             <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
                                 🔍 Buscar
@@ -70,7 +60,8 @@
         <div class="card">
             <div class="inventory-grid">
                 <% if (productos && productos.length > 0) { %>
-                    <table class="table" id="tablaInventario">
+                    <div class="table-responsive">
+                        <table class="table" id="tablaInventario">
                         <thead>
                             <tr>
                                 <th>Modelo</th>
@@ -126,6 +117,7 @@
                             <% }); %>
                         </tbody>
                     </table>
+                    </div>
                 <% } else { %>
                     <div class="empty-state">
                         <div class="empty-icon">📦</div>
@@ -157,7 +149,6 @@
         function aplicarFiltros() {
             const buscarModelo = document.getElementById('buscarModelo').value.toLowerCase();
             const filtroTalla = document.getElementById('filtroTalla').value;
-            const filtroStock = document.getElementById('filtroStock').value;
             
             const filas = document.querySelectorAll('#tablaInventario tbody tr');
             let visibles = 0;
@@ -183,20 +174,6 @@
                     }
                 }
                 
-                // Filtro por stock
-                if (filtroStock && mostrar) {
-                    const celdas = fila.getElementsByTagName('td');
-                    const totalStock = parseInt(celdas[7]?.textContent || '0');
-                    
-                    if (filtroStock === 'disponible' && totalStock === 0) {
-                        mostrar = false;
-                    } else if (filtroStock === 'bajo' && (totalStock === 0 || totalStock >= 5)) {
-                        mostrar = false;
-                    } else if (filtroStock === 'agotado' && totalStock > 0) {
-                        mostrar = false;
-                    }
-                }
-                
                 fila.style.display = mostrar ? '' : 'none';
                 if (mostrar) visibles++;
             });
@@ -210,7 +187,6 @@
         function limpiarFiltros() {
             document.getElementById('buscarModelo').value = '';
             document.getElementById('filtroTalla').value = '';
-            document.getElementById('filtroStock').value = '';
             
             // Mostrar todas las filas
             const filas = document.querySelectorAll('#tablaInventario tbody tr');

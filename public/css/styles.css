@@ -1621,6 +1621,12 @@ textarea.form-control {
 /* Tabla responsive */
 .table-responsive {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    margin-bottom: 1rem;
+}
+
+.table-responsive .table {
+    min-width: 800px; /* Ancho mínimo para scroll */
 }
 
 .whatsapp-link-small {
