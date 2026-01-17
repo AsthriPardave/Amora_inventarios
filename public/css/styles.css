@@ -279,6 +279,7 @@ main.container {
     border-radius: 10px;
     overflow: hidden;
     box-shadow: var(--shadow);
+    font-size: 14px; /* Tamaño de fuente uniforme */
 }
 
 .table thead {
@@ -288,8 +289,14 @@ main.container {
 
 .table th,
 .table td {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     text-align: left;
+    white-space: nowrap; /* Evita corte de palabras */
+}
+
+.table th {
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .table tbody tr {
@@ -298,11 +305,6 @@ main.container {
 
 .table tbody tr:hover {
     background-color: var(--light-color);
-}
-
-.table .actions {
-    display: flex;
-    gap: 0.5rem;
 }
 
 /* ============ MODAL ============ */
@@ -1623,10 +1625,25 @@ textarea.form-control {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
     margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
 }
 
 .table-responsive .table {
-    min-width: 800px; /* Ancho mínimo para scroll */
+    min-width: 1100px; /* Ancho mínimo para activar scroll horizontal */
+    margin-bottom: 0;
+    font-size: 14px; /* Tamaño de fuente uniforme y legible */
+}
+
+.table-responsive .table th,
+.table-responsive .table td {
+    white-space: nowrap; /* Evita que el texto se corte en múltiples líneas */
+    padding: 0.75rem 1rem; /* Espaciado adecuado */
+}
+
+.table-responsive .table th {
+    font-size: 14px; /* Mismo tamaño que el cuerpo */
+    font-weight: 600;
 }
 
 .whatsapp-link-small {

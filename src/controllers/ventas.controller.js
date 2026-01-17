@@ -15,7 +15,7 @@ class VentasController {
         try {
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:N'
             );
 
             const inventario = {};
@@ -24,14 +24,54 @@ class VentasController {
                 rows.slice(1).forEach(row => {
                     const modelo = row[1] || '';
                     if (modelo) {
-                        inventario[modelo] = {};
-                        // Procesar tallas (columnas D a I = índices 3 a 8)
+                        if (!inventario[modelo]) {
+                            inventario[modelo] = {
+                                variantes: [],
+                                tallas: {},
+                                colores: new Set(),
+                                marcas: new Set(),
+                                tacos: new Set()
+                            };
+                        }
+
+                        const color = row[2] || '';
+                        const marca = row[3] || '';
+                        const taco = row[4] || '';
+                        
+                        // Agregar opciones únicas
+                        if (color) inventario[modelo].colores.add(color);
+                        if (marca) inventario[modelo].marcas.add(marca);
+                        if (taco) inventario[modelo].tacos.add(taco);
+
+                        // Crear clave única para esta variante
+                        const varianteKey = `${color}|${marca}|${taco}`;
+                        
+                        // Procesar tallas (columnas F a K = índices 5 a 10)
+                        const tallasVariante = {};
                         for (let i = 0; i < 6; i++) {
                             const talla = 35 + i;
-                            const stock = parseInt(row[3 + i]) || 0;
-                            inventario[modelo][talla] = stock;
+                            const stock = parseInt(row[5 + i]) || 0;
+                            if (stock > 0) {
+                                tallasVariante[talla] = stock;
+                            }
                         }
+
+                        // Guardar variante con sus tallas
+                        inventario[modelo].variantes.push({
+                            color,
+                            marca,
+                            taco,
+                            key: varianteKey,
+                            tallas: tallasVariante
+                        });
                     }
+                });
+
+                // Convertir Sets a Arrays
+                Object.keys(inventario).forEach(modelo => {
+                    inventario[modelo].colores = Array.from(inventario[modelo].colores);
+                    inventario[modelo].marcas = Array.from(inventario[modelo].marcas);
+                    inventario[modelo].tacos = Array.from(inventario[modelo].tacos);
                 });
             }
 
@@ -50,22 +90,20 @@ class VentasController {
             // Leer productos desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:G'
+                'A:N'
             );
 
             if (!rows || rows.length <= 1) {
                 return [];
             }
 
-            // Convertir a objetos y extraer modelos únicos
-            const productos = googleSheetsService.rowsToObjects(rows);
-            const modelos = [...new Set(productos.map(p => p.modelo).filter(Boolean))];
+            // Extraer modelos únicos (columna B, índice 1)
+            const modelos = [...new Set(rows.slice(1).map(row => row[1]).filter(Boolean))];
             
             return modelos;
         } catch (error) {
             console.error('Error al obtener modelos:', error);
-            // Retornar modelos de ejemplo si hay error
-            return ['Nike Air Max 270', 'Adidas Superstar', 'Puma RS-X'];
+            return [];
         }
     }
 
@@ -98,7 +136,7 @@ class VentasController {
     static async registrarVenta(req, res) {
         try {
             const { 
-                modelo, talla, cantidad, 
+                modelo, color, marca, tamano_taco, talla, cantidad, 
                 direccion, departamento, provincia, distrito, referencia,
                 deliveryPagado, whatsapp, observaciones,
                 formToken
@@ -122,9 +160,12 @@ class VentasController {
                     // Si hay una venta idéntica en los últimos 5 segundos, es un duplicado
                     if (diferenciaSegundos < 5 &&
                         venta[1] === modelo &&
-                        venta[2] === talla &&
-                        venta[3] === cantidad &&
-                        venta[11] === whatsapp) {
+                        venta[2] === color &&
+                        venta[3] === marca &&
+                        venta[4] === tamano_taco &&
+                        venta[5] === talla &&
+                        venta[6] === cantidad &&
+                        venta[14] === whatsapp) {
                         
                         console.warn('⚠️ Duplicado detectado - Venta ignorada');
                         return res.render('ventas/registro', {
@@ -154,13 +195,13 @@ class VentasController {
             }
 
             // Validar datos básicos del producto
-            if (!modelo || !talla || !cantidad) {
+            if (!modelo || !color || !marca || !tamano_taco || !talla || !cantidad) {
                 return res.render('ventas/registro', {
                     title: 'Registrar Venta',
                     ubigeo: UBIGEO_PERU,
                     modelos: await VentasController.obtenerModelosDisponibles(),
                     inventario: await VentasController.obtenerInventarioCompleto(),
-                    error: '⚠️ Los datos del producto son obligatorios.',
+                    error: '⚠️ Todos los datos del producto son obligatorios (modelo, color, marca, taco, talla, cantidad).',
                     success: null,
                     formData: req.body
                 });
@@ -202,22 +243,25 @@ class VentasController {
             const fechaFormateada = fechaPeru.toISOString();
 
             // Preparar datos para Google Sheets
-            // Orden: Fecha, Modelo, Talla, Cantidad, Departamento, Provincia, Distrito, Dirección, Referencia, Dirección Completa, WhatsApp, Delivery Pagado, Estado, Observaciones
+            // Orden: Fecha, Modelo, Color, Marca, Taco, Talla, Cantidad, Departamento, Provincia, Distrito, Dirección, Referencia, Dirección Completa, WhatsApp, Delivery Pagado, Estado, Observaciones
             const ventaData = [
                 fechaFormateada,     // A: Fecha
                 modelo,              // B: Modelo
-                talla,               // C: Talla
-                cantidad,            // D: Cantidad
-                departamento,        // E: Departamento
-                provincia,           // F: Provincia
-                distrito,            // G: Distrito
-                direccion,           // H: Dirección exacta
-                referencia || '',    // I: Referencia
-                direccionCompleta,   // J: Dirección completa
-                whatsapp,            // K: WhatsApp
-                'Sí',                // L: Delivery Pagado (siempre Sí)
-                'Pendiente de envío', // M: Estado
-                observaciones || ''   // N: Observaciones
+                color,               // C: Color
+                marca,               // D: Marca
+                tamano_taco,         // E: Tamaño de taco
+                talla,               // F: Talla
+                cantidad,            // G: Cantidad
+                departamento,        // H: Departamento
+                provincia,           // I: Provincia
+                distrito,            // J: Distrito
+                direccion,           // K: Dirección exacta
+                referencia || '',    // L: Referencia
+                direccionCompleta,   // M: Dirección completa
+                whatsapp,            // N: WhatsApp
+                'Sí',                // O: Delivery Pagado (siempre Sí)
+                'Pendiente de envío', // P: Estado
+                observaciones || ''   // Q: Observaciones
             ];
 
             // Guardar en Google Sheets
@@ -230,8 +274,8 @@ class VentasController {
 
             // DESCONTAR STOCK - Ya que el delivery está pagado
             try {
-                await VentasController.descontarStock(modelo, tallaNum, parseInt(cantidad));
-                console.log(`✅ Stock descontado correctamente: ${modelo} - Talla ${tallaNum} - Cantidad ${cantidad}`);
+                await VentasController.descontarStock(modelo, color, marca, tamano_taco, tallaNum, parseInt(cantidad));
+                console.log(`✅ Stock descontado correctamente: ${modelo} - ${color} - ${marca} - ${tamano_taco} - Talla ${tallaNum} - Cantidad ${cantidad}`);
             } catch (errorStock) {
                 console.error('⚠️ Error al descontar stock:', errorStock.message);
                 // Continuar aunque falle el descuento de stock, la venta ya está registrada
@@ -269,30 +313,33 @@ class VentasController {
             // Leer ventas desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:O'
+                'A:Q'
             );
 
             let ventas = [];
             
             if (rows && rows.length > 1) {
                 // Convertir filas a objetos
-                // Orden: A=Fecha, B=Modelo, C=Talla, D=Cantidad, E=Departamento, F=Provincia, G=Distrito, H=Dirección, I=Referencia, J=Dir.Completa, K=WhatsApp, L=DeliveryPagado, M=Estado, N=Observaciones
+                // Orden: A=Fecha, B=Modelo, C=Color, D=Marca, E=Taco, F=Talla, G=Cantidad, H=Departamento, I=Provincia, J=Distrito, K=Dirección, L=Referencia, M=Dir.Completa, N=WhatsApp, O=DeliveryPagado, P=Estado, Q=Observaciones
                 ventas = rows.slice(1).map(row => {
                     return {
                         fecha: row[0] || '',           // A
                         modelo: row[1] || '',          // B
-                        talla: row[2] || '',           // C
-                        cantidad: row[3] || '',        // D
-                        departamento: row[4] || '',    // E
-                        provincia: row[5] || '',       // F
-                        ciudad: row[6] || '',          // G (distrito)
-                        direccion: row[7] || '',       // H (dirección exacta)
-                        referencia: row[8] || '',      // I
-                        direccionCompleta: row[9] || '', // J
-                        whatsapp: row[10] || '',       // K
-                        deliveryPagado: row[11] || '', // L
-                        estado: row[12] || 'Pendiente de envío', // M
-                        observaciones: row[13] || ''   // N
+                        color: row[2] || '',           // C
+                        marca: row[3] || '',           // D
+                        taco: row[4] || '',            // E
+                        talla: row[5] || '',           // F
+                        cantidad: row[6] || '',        // G
+                        departamento: row[7] || '',    // H
+                        provincia: row[8] || '',       // I
+                        ciudad: row[9] || '',          // J (distrito)
+                        direccion: row[10] || '',      // K (dirección exacta)
+                        referencia: row[11] || '',     // L
+                        direccionCompleta: row[12] || '', // M
+                        whatsapp: row[13] || '',       // N
+                        deliveryPagado: row[14] || '', // O
+                        estado: row[15] || 'Pendiente de envío', // P
+                        observaciones: row[16] || ''   // Q
                     };
                 });
             }
@@ -330,7 +377,7 @@ class VentasController {
             // Leer la venta actual
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:O'
+                'A:Q'
             );
 
             if (!rows || rows.length < rowIndex) {
@@ -341,33 +388,36 @@ class VentasController {
             }
 
             const filaActual = rows[rowIndex - 1];
-            const deliveryAnterior = filaActual[11]; // Estado anterior del delivery (columna L, índice 11)
+            const deliveryAnterior = filaActual[14]; // Estado anterior del delivery (columna O, índice 14)
 
             // Actualizar solo los campos de delivery y estado
             const filaActualizada = [...filaActual];
             if (deliveryPagado !== undefined) {
-                filaActualizada[11] = deliveryPagado; // Columna L (índice 11)
+                filaActualizada[14] = deliveryPagado; // Columna O (índice 14)
             }
             if (estado !== undefined) {
-                filaActualizada[12] = estado; // Columna M (índice 12)
+                filaActualizada[15] = estado; // Columna P (índice 15)
             }
 
             // Si el delivery cambia de No/Pendiente a Sí/Pagado, descontar stock
             if (deliveryPagado === 'Sí' && deliveryAnterior !== 'Sí') {
                 console.log('Descontando stock por cambio de delivery a Pagado');
                 
-                const modelo = filaActual[1];
-                const talla = parseInt(filaActual[2]);
-                const cantidad = parseInt(filaActual[3]);
+                const modelo = filaActual[1];  // B: Modelo
+                const color = filaActual[2];   // C: Color
+                const marca = filaActual[3];   // D: Marca
+                const taco = filaActual[4];    // E: Taco
+                const talla = parseInt(filaActual[5]);  // F: Talla
+                const cantidad = parseInt(filaActual[6]); // G: Cantidad
 
                 // Descontar stock del inventario
-                await VentasController.descontarStock(modelo, talla, cantidad);
+                await VentasController.descontarStock(modelo, color, marca, taco, talla, cantidad);
             }
 
             // Escribir la fila actualizada
             await googleSheetsService.writeSheet(
                 config.sheetNames.ventas,
-                `A${rowIndex}:O${rowIndex}`,
+                `A${rowIndex}:Q${rowIndex}`,
                 [filaActualizada]
             );
 
@@ -392,34 +442,43 @@ class VentasController {
 
     /**
      * Descontar stock del inventario
+     * @param {string} modelo - Modelo del producto
+     * @param {string} color - Color del producto
+     * @param {string} marca - Marca del producto
+     * @param {string} taco - Tamaño de taco
+     * @param {number} talla - Talla (35-40)
+     * @param {number} cantidad - Cantidad a descontar
      */
-    static async descontarStock(modelo, talla, cantidad) {
+    static async descontarStock(modelo, color, marca, taco, talla, cantidad) {
         try {
             // Leer productos desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:M'
+                'A:N'
             );
 
             if (!rows || rows.length <= 1) {
                 throw new Error('No se encontraron productos en la hoja');
             }
 
-            // Buscar el producto por modelo
+            // Buscar el producto por modelo, color, marca y taco
             let filaIndex = -1;
             for (let i = 1; i < rows.length; i++) {
-                if (rows[i][1] === modelo) {
+                if (rows[i][1] === modelo &&   // Modelo (columna B)
+                    rows[i][2] === color &&     // Color (columna C)
+                    rows[i][3] === marca &&     // Marca (columna D)
+                    rows[i][4] === taco) {      // Taco (columna E)
                     filaIndex = i;
                     break;
                 }
             }
 
             if (filaIndex === -1) {
-                throw new Error(`No se encontró el modelo: ${modelo}`);
+                throw new Error(`No se encontró el producto: ${modelo} - ${color} - ${marca} - ${taco}`);
             }
 
-            // Calcular el índice de la talla (35-40 -> 3-8)
-            const tallaIndex = 3 + (talla - 35);
+            // Calcular el índice de la talla (35-40 -> columnas F-K, índices 5-10)
+            const tallaIndex = 5 + (talla - 35);
             
             const filaActual = rows[filaIndex];
             const stockActual = parseInt(filaActual[tallaIndex]) || 0;
@@ -432,21 +491,21 @@ class VentasController {
             const nuevoStock = stockActual - cantidad;
             filaActual[tallaIndex] = nuevoStock;
 
-            // Recalcular el total
+            // Recalcular el total (suma de columnas F a K, índices 5 a 10)
             let nuevoTotal = 0;
-            for (let i = 3; i <= 8; i++) {
+            for (let i = 5; i <= 10; i++) {
                 nuevoTotal += parseInt(filaActual[i]) || 0;
             }
-            filaActual[9] = nuevoTotal;
+            filaActual[11] = nuevoTotal; // Columna L
 
             // Actualizar en Google Sheets
             await googleSheetsService.writeSheet(
                 config.sheetNames.productos,
-                `A${filaIndex + 1}:M${filaIndex + 1}`,
+                `A${filaIndex + 1}:N${filaIndex + 1}`,
                 [filaActual]
             );
 
-            console.log(`Stock descontado: Modelo ${modelo}, Talla ${talla}, Cantidad ${cantidad}`);
+            console.log(`Stock descontado: ${modelo} - ${color} - ${marca} - ${taco}, Talla ${talla}, Cantidad ${cantidad}`);
             console.log(`Stock anterior: ${stockActual}, Stock nuevo: ${nuevoStock}`);
 
         } catch (error) {

@@ -15,7 +15,7 @@ class InventarioController {
             // Leer productos desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:N'
             );
 
             let productos = [];
@@ -25,14 +25,18 @@ class InventarioController {
                     return {
                         id: row[0] || (index + 1),
                         modelo: row[1] || '',
-                        categoria: row[2] || '',
-                        talla_35: parseInt(row[3]) || 0,
-                        talla_36: parseInt(row[4]) || 0,
-                        talla_37: parseInt(row[5]) || 0,
-                        talla_38: parseInt(row[6]) || 0,
-                        talla_39: parseInt(row[7]) || 0,
-                        talla_40: parseInt(row[8]) || 0,
-                        total: parseInt(row[9]) || 0
+                        color: row[2] || '',
+                        marca: row[3] || '',
+                        tamano_taco: row[4] || '',
+                        talla_35: parseInt(row[5]) || 0,
+                        talla_36: parseInt(row[6]) || 0,
+                        talla_37: parseInt(row[7]) || 0,
+                        talla_38: parseInt(row[8]) || 0,
+                        talla_39: parseInt(row[9]) || 0,
+                        talla_40: parseInt(row[10]) || 0,
+                        total: parseInt(row[11]) || 0,
+                        precio: row[12] || '',
+                        descripcion: row[13] || ''
                     };
                 });
             }
@@ -62,7 +66,7 @@ class InventarioController {
             // Leer productos desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:N'
             );
 
             let producto = null;
@@ -73,14 +77,18 @@ class InventarioController {
                         producto = {
                             id: rows[i][0],
                             modelo: rows[i][1] || '',
-                            categoria: rows[i][2] || '',
-                            talla_35: parseInt(rows[i][3]) || 0,
-                            talla_36: parseInt(rows[i][4]) || 0,
-                            talla_37: parseInt(rows[i][5]) || 0,
-                            talla_38: parseInt(rows[i][6]) || 0,
-                            talla_39: parseInt(rows[i][7]) || 0,
-                            talla_40: parseInt(rows[i][8]) || 0,
-                            total: parseInt(rows[i][9]) || 0
+                            color: rows[i][2] || '',
+                            marca: rows[i][3] || '',
+                            tamano_taco: rows[i][4] || '',
+                            talla_35: parseInt(rows[i][5]) || 0,
+                            talla_36: parseInt(rows[i][6]) || 0,
+                            talla_37: parseInt(rows[i][7]) || 0,
+                            talla_38: parseInt(rows[i][8]) || 0,
+                            talla_39: parseInt(rows[i][9]) || 0,
+                            talla_40: parseInt(rows[i][10]) || 0,
+                            total: parseInt(rows[i][11]) || 0,
+                            precio: rows[i][12] || '',
+                            descripcion: rows[i][13] || ''
                         };
                         break;
                     }
@@ -129,14 +137,18 @@ class InventarioController {
             const newProducto = [
                 id,
                 productoData.modelo,
-                productoData.categoria || 'Zapatillas',
+                productoData.color || '',
+                productoData.marca || '',
+                productoData.tamano_taco || '',
                 productoData.talla_35 || 0,
                 productoData.talla_36 || 0,
                 productoData.talla_37 || 0,
                 productoData.talla_38 || 0,
                 productoData.talla_39 || 0,
                 productoData.talla_40 || 0,
-                productoData.total
+                productoData.total,
+                productoData.precio || '',
+                productoData.descripcion || ''
             ];
 
             // Guardar en Google Sheets
@@ -215,7 +227,7 @@ class InventarioController {
             // Leer productos desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:N'
             );
 
             let productos = [];
@@ -225,14 +237,18 @@ class InventarioController {
                     return {
                         id: row[0] || '',
                         modelo: row[1] || '',
-                        categoria: row[2] || '',
-                        talla_35: parseInt(row[3]) || 0,
-                        talla_36: parseInt(row[4]) || 0,
-                        talla_37: parseInt(row[5]) || 0,
-                        talla_38: parseInt(row[6]) || 0,
-                        talla_39: parseInt(row[7]) || 0,
-                        talla_40: parseInt(row[8]) || 0,
-                        total: parseInt(row[9]) || 0
+                        color: row[2] || '',
+                        marca: row[3] || '',
+                        tamano_taco: row[4] || '',
+                        talla_35: parseInt(row[5]) || 0,
+                        talla_36: parseInt(row[6]) || 0,
+                        talla_37: parseInt(row[7]) || 0,
+                        talla_38: parseInt(row[8]) || 0,
+                        talla_39: parseInt(row[9]) || 0,
+                        talla_40: parseInt(row[10]) || 0,
+                        total: parseInt(row[11]) || 0,
+                        precio: row[12] || '',
+                        descripcion: row[13] || ''
                     };
                 });
             }

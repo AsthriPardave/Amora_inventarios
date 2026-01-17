@@ -68,11 +68,34 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="talla">Talla *</label>
-                            <select id="talla" name="talla" class="form-control" required disabled>
+                            <label for="color">Color *</label>
+                            <select id="color" name="color" class="form-control" required disabled>
                                 <option value="">Primero selecciona un modelo</option>
                             </select>
-                            <small id="tallaInfo" class="text-muted">Selecciona un modelo para ver tallas disponibles</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="marca">Marca *</label>
+                            <select id="marca" name="marca" class="form-control" required disabled>
+                                <option value="">Primero selecciona un modelo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tamano_taco">Tamaño de Taco *</label>
+                            <select id="tamano_taco" name="tamano_taco" class="form-control" required disabled>
+                                <option value="">Primero selecciona un modelo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="talla">Talla *</label>
+                            <select id="talla" name="talla" class="form-control" required disabled>
+                                <option value="">Selecciona color, marca y taco primero</option>
+                            </select>
+                            <small id="tallaInfo" class="text-muted">Selecciona los atributos del producto</small>
                         </div>
 
                         <div class="form-group">
@@ -375,56 +398,132 @@
         // Inventario completo desde el servidor
         const inventario = <%- JSON.stringify(inventario || {}) %>;
 
-        // Actualizar tallas disponibles cuando se selecciona un modelo
-        document.getElementById('modelo').addEventListener('change', function() {
+        const selectModelo = document.getElementById('modelo');
+        const selectColor = document.getElementById('color');
+        const selectMarca = document.getElementById('marca');
+        const selectTaco = document.getElementById('tamano_taco');
+        const selectTalla = document.getElementById('talla');
+        const tallaInfo = document.getElementById('tallaInfo');
+
+        // Cuando se selecciona un modelo
+        selectModelo.addEventListener('change', function() {
             const modeloSeleccionado = this.value;
-            const selectTalla = document.getElementById('talla');
-            const tallaInfo = document.getElementById('tallaInfo');
             
-            // Limpiar opciones anteriores
-            selectTalla.innerHTML = '<option value="">Seleccionar talla</option>';
+            // Limpiar y resetear campos dependientes
+            selectColor.innerHTML = '<option value="">Seleccionar color</option>';
+            selectMarca.innerHTML = '<option value="">Seleccionar marca</option>';
+            selectTaco.innerHTML = '<option value="">Seleccionar tamaño de taco</option>';
+            selectTalla.innerHTML = '<option value="">Selecciona color, marca y taco primero</option>';
+            
+            selectColor.disabled = true;
+            selectMarca.disabled = true;
+            selectTaco.disabled = true;
+            selectTalla.disabled = true;
             
             if (modeloSeleccionado && inventario[modeloSeleccionado]) {
-                const tallasDisponibles = [];
+                const data = inventario[modeloSeleccionado];
                 
-                // Agregar solo tallas con stock > 0
-                for (let talla = 35; talla <= 40; talla++) {
-                    const stock = inventario[modeloSeleccionado][talla] || 0;
-                    if (stock > 0) {
+                // Poblar colores disponibles
+                if (data.colores && data.colores.length > 0) {
+                    data.colores.forEach(color => {
                         const option = document.createElement('option');
-                        option.value = talla;
-                        option.textContent = `${talla} (${stock} disponibles)`;
-                        selectTalla.appendChild(option);
-                        tallasDisponibles.push(talla);
-                    }
+                        option.value = color;
+                        option.textContent = color;
+                        selectColor.appendChild(option);
+                    });
+                    selectColor.disabled = false;
                 }
                 
-                if (tallasDisponibles.length > 0) {
-                    selectTalla.disabled = false;
-                    tallaInfo.textContent = `👟 Tallas disponibles: ${tallasDisponibles.join(', ')}`;
-                    tallaInfo.className = 'text-success';
-                } else {
-                    selectTalla.disabled = true;
-                    selectTalla.innerHTML = '<option value="">Sin stock disponible</option>';
-                    tallaInfo.textContent = '⚠️ Este modelo no tiene stock disponible';
-                    tallaInfo.className = 'text-danger';
+                // Poblar marcas disponibles
+                if (data.marcas && data.marcas.length > 0) {
+                    data.marcas.forEach(marca => {
+                        const option = document.createElement('option');
+                        option.value = marca;
+                        option.textContent = marca;
+                        selectMarca.appendChild(option);
+                    });
+                    selectMarca.disabled = false;
                 }
-            } else {
-                selectTalla.disabled = true;
-                selectTalla.innerHTML = '<option value="">Primero selecciona un modelo</option>';
-                tallaInfo.textContent = 'Selecciona un modelo para ver tallas disponibles';
-                tallaInfo.className = 'text-muted';
+                
+                // Poblar tamaños de taco disponibles
+                if (data.tacos && data.tacos.length > 0) {
+                    data.tacos.forEach(taco => {
+                        const option = document.createElement('option');
+                        option.value = taco;
+                        option.textContent = taco;
+                        selectTaco.appendChild(option);
+                    });
+                    selectTaco.disabled = false;
+                }
             }
         });
 
+        // Cuando cambia color, marca o taco, actualizar tallas
+        function actualizarTallas() {
+            const modeloSeleccionado = selectModelo.value;
+            const colorSeleccionado = selectColor.value;
+            const marcaSeleccionada = selectMarca.value;
+            const tacoSeleccionado = selectTaco.value;
+            
+            selectTalla.innerHTML = '<option value="">Seleccionar talla</option>';
+            selectTalla.disabled = true;
+            
+            if (modeloSeleccionado && colorSeleccionado && marcaSeleccionada && tacoSeleccionado && inventario[modeloSeleccionado]) {
+                const varianteKey = `${colorSeleccionado}|${marcaSeleccionada}|${tacoSeleccionado}`;
+                const data = inventario[modeloSeleccionado];
+                
+                // Buscar la variante exacta
+                const variante = data.variantes.find(v => v.key === varianteKey);
+                
+                if (variante && variante.tallas) {
+                    const tallasDisponibles = Object.keys(variante.tallas).sort();
+                    
+                    if (tallasDisponibles.length > 0) {
+                        tallasDisponibles.forEach(talla => {
+                            const stock = variante.tallas[talla];
+                            const option = document.createElement('option');
+                            option.value = talla;
+                            option.textContent = `${talla} (${stock} disponibles)`;
+                            selectTalla.appendChild(option);
+                        });
+                        
+                        selectTalla.disabled = false;
+                        tallaInfo.textContent = `👟 Tallas disponibles: ${tallasDisponibles.join(', ')}`;
+                        tallaInfo.className = 'text-success';
+                    } else {
+                        tallaInfo.textContent = '⚠️ Esta combinación no tiene stock disponible';
+                        tallaInfo.className = 'text-danger';
+                    }
+                } else {
+                    tallaInfo.textContent = '⚠️ Esta combinación no está disponible';
+                    tallaInfo.className = 'text-danger';
+                }
+            } else {
+                tallaInfo.textContent = 'Selecciona todos los atributos del producto';
+                tallaInfo.className = 'text-muted';
+            }
+        }
+
+        selectColor.addEventListener('change', actualizarTallas);
+        selectMarca.addEventListener('change', actualizarTallas);
+        selectTaco.addEventListener('change', actualizarTallas);
+
         // Validar stock antes de enviar
         document.getElementById('formVenta').addEventListener('submit', function(e) {
-            const modelo = document.getElementById('modelo').value;
-            const talla = parseInt(document.getElementById('talla').value);
+            const modelo = selectModelo.value;
+            const color = selectColor.value;
+            const marca = selectMarca.value;
+            const taco = selectTaco.value;
+            const talla = parseInt(selectTalla.value);
             const cantidad = parseInt(document.getElementById('cantidad').value);
             
-            if (modelo && talla && inventario[modelo]) {
-                const stockDisponible = inventario[modelo][talla] || 0;
+            if (modelo && color && marca && taco && talla && inventario[modelo]) {
+                const varianteKey = `${color}|${marca}|${taco}`;
+                const data = inventario[modelo];
+                const variante = data.variantes.find(v => v.key === varianteKey);
+                
+                if (variante && variante.tallas) {
+                    const stockDisponible = variante.tallas[talla] || 0;
                 
                 if (cantidad > stockDisponible) {
                     e.preventDefault();

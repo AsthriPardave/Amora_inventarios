@@ -34,6 +34,26 @@
                         </div>
                         
                         <div class="form-group">
+                            <label for="filtroMarca">Marca</label>
+                            <input 
+                                type="text" 
+                                id="filtroMarca" 
+                                class="form-control"
+                                placeholder="Filtrar por marca..."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="filtroColor">Color</label>
+                            <input 
+                                type="text" 
+                                id="filtroColor" 
+                                class="form-control"
+                                placeholder="Filtrar por color..."
+                            >
+                        </div>
+                        
+                        <div class="form-group">
                             <label for="filtroTalla">Talla</label>
                             <select id="filtroTalla" class="form-control">
                                 <option value="">Todas las tallas</option>
@@ -64,22 +84,33 @@
                         <table class="table" id="tablaInventario">
                         <thead>
                             <tr>
-                                <th>Modelo</th>
-                                <th>Talla 35</th>
-                                <th>Talla 36</th>
-                                <th>Talla 37</th>
-                                <th>Talla 38</th>
-                                <th>Talla 39</th>
-                                <th>Talla 40</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th rowspan="2">Modelo</th>
+                                <th rowspan="2">Marca</th>
+                                <th rowspan="2">Color</th>
+                                <th rowspan="2">Taco</th>
+                                <th colspan="6">Tallas</th>
+                                <th rowspan="2">Total</th>
+                                <th rowspan="2">Precio</th>
+                                <th rowspan="2">Estado</th>
+                            </tr>
+                            <tr>
+                                <th>35</th>
+                                <th>36</th>
+                                <th>37</th>
+                                <th>38</th>
+                                <th>39</th>
+                                <th>40</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% productos.forEach(producto => { %>
-                                <tr data-modelo="<%= producto.modelo.toLowerCase() %>" data-categoria="<%= producto.categoria.toLowerCase() %>">
+                                <tr data-modelo="<%= producto.modelo.toLowerCase() %>" 
+                                    data-marca="<%= (producto.marca || '').toLowerCase() %>"
+                                    data-color="<%= (producto.color || '').toLowerCase() %>">
                                     <td><strong><%= producto.modelo %></strong></td>
+                                    <td><%= producto.marca || '-' %></td>
+                                    <td><%= producto.color || '-' %></td>
+                                    <td><%= producto.tamano_taco || '-' %></td>
                                     <td class="<%= producto.talla_35 === 0 ? 'stock-cero' : producto.talla_35 < 3 ? 'stock-bajo' : '' %>">
                                         <%= producto.talla_35 %>
                                     </td>
@@ -99,6 +130,7 @@
                                         <%= producto.talla_40 %>
                                     </td>
                                     <td><strong><%= producto.total %></strong></td>
+                                    <td><%= producto.precio || '-' %></td>
                                     <td>
                                         <% if (producto.total === 0) { %>
                                             <span class="badge badge-danger">Sin stock</span>
@@ -107,11 +139,6 @@
                                         <% } else { %>
                                             <span class="badge badge-success">Disponible</span>
                                         <% } %>
-                                    </td>
-                                    <td class="actions">
-                                        <button class="btn-icon" onclick="verDetalle('<%= producto.id %>')" title="Ver detalles">
-                                            👁️
-                                        </button>
                                     </td>
                                 </tr>
                             <% }); %>
@@ -148,6 +175,8 @@
         // Funcionalidad de filtros
         function aplicarFiltros() {
             const buscarModelo = document.getElementById('buscarModelo').value.toLowerCase();
+            const filtroMarca = document.getElementById('filtroMarca').value.toLowerCase();
+            const filtroColor = document.getElementById('filtroColor').value.toLowerCase();
             const filtroTalla = document.getElementById('filtroTalla').value;
             
             const filas = document.querySelectorAll('#tablaInventario tbody tr');
@@ -164,10 +193,27 @@
                     }
                 }
                 
+                // Filtro por marca
+                if (filtroMarca && mostrar) {
+                    const marca = fila.getAttribute('data-marca') || '';
+                    if (!marca.includes(filtroMarca)) {
+                        mostrar = false;
+                    }
+                }
+                
+                // Filtro por color
+                if (filtroColor && mostrar) {
+                    const color = fila.getAttribute('data-color') || '';
+                    if (!color.includes(filtroColor)) {
+                        mostrar = false;
+                    }
+                }
+                
                 // Filtro por talla
                 if (filtroTalla && mostrar) {
                     const celdas = fila.getElementsByTagName('td');
-                    const indiceTalla = parseInt(filtroTalla) - 35 + 1; // +1 porque la primera celda es el modelo
+                    // Índice ajustado: modelo(0), marca(1), color(2), taco(3), T35(4)...
+                    const indiceTalla = parseInt(filtroTalla) - 35 + 4;
                     const stockTalla = parseInt(celdas[indiceTalla]?.textContent || '0');
                     if (stockTalla === 0) {
                         mostrar = false;
@@ -186,6 +232,8 @@
 
         function limpiarFiltros() {
             document.getElementById('buscarModelo').value = '';
+            document.getElementById('filtroMarca').value = '';
+            document.getElementById('filtroColor').value = '';
             document.getElementById('filtroTalla').value = '';
             
             // Mostrar todas las filas
@@ -193,11 +241,6 @@
             filas.forEach(fila => {
                 fila.style.display = '';
             });
-        }
-
-        function verDetalle(productoId) {
-            // TODO: Implementar vista de detalle
-            alert('Mostrar detalles del producto: ' + productoId);
         }
     </script>
 </body>
