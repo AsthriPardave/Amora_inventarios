@@ -53,22 +53,54 @@
                             id="modelo" 
                             name="modelo" 
                             class="form-control"
-                            placeholder="Ej: Nike Air Max 2024"
+                            placeholder="Ej: Stiletto Elegante, Plataforma Casual"
                             value="<%= locals.formData?.modelo || '' %>"
                             required
                         >
                     </div>
 
                     <div class="form-group">
-                        <label for="categoria">Categoría</label>
+                        <label for="color">Color *</label>
                         <input 
                             type="text" 
-                            id="categoria" 
-                            name="categoria" 
+                            id="color" 
+                            name="color" 
                             class="form-control"
-                            placeholder="Ej: Zapatillas, Sandalias, Botas"
-                            value="<%= locals.formData?.categoria || 'Zapatillas' %>"
+                            placeholder="Ej: Negro, Rojo, Beige"
+                            value="<%= locals.formData?.color || '' %>"
+                            required
                         >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marca">Marca *</label>
+                        <input 
+                            type="text" 
+                            id="marca" 
+                            name="marca" 
+                            class="form-control"
+                            placeholder="Ej: Zara, Bata, Platanitos"
+                            value="<%= locals.formData?.marca || '' %>"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tamano_taco">Tamaño de Taco *</label>
+                        <select 
+                            id="tamano_taco" 
+                            name="tamano_taco" 
+                            class="form-control"
+                            required
+                        >
+                            <option value="">Selecciona el tamaño</option>
+                            <option value="5cm" <%= locals.formData?.tamano_taco === '5cm' ? 'selected' : '' %>>5 cm - Bajo</option>
+                            <option value="7cm" <%= locals.formData?.tamano_taco === '7cm' ? 'selected' : '' %>>7 cm - Medio</option>
+                            <option value="9cm" <%= locals.formData?.tamano_taco === '9cm' ? 'selected' : '' %>>9 cm - Alto</option>
+                            <option value="11cm" <%= locals.formData?.tamano_taco === '11cm' ? 'selected' : '' %>>11 cm - Muy Alto</option>
+                            <option value="Plataforma" <%= locals.formData?.tamano_taco === 'Plataforma' ? 'selected' : '' %>>Plataforma</option>
+                            <option value="Stiletto" <%= locals.formData?.tamano_taco === 'Stiletto' ? 'selected' : '' %>>Stiletto</option>
+                        </select>
                     </div>
 
                     <div class="form-group">

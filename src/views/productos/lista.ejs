@@ -26,7 +26,9 @@
                         <tr>
                             <th>ID</th>
                             <th>Modelo</th>
-                            <th>Categoría</th>
+                            <th>Marca</th>
+                            <th>Color</th>
+                            <th>Taco</th>
                             <th>T35</th>
                             <th>T36</th>
                             <th>T37</th>
@@ -42,7 +44,9 @@
                             <tr>
                                 <td><%= producto.id %></td>
                                 <td><strong><%= producto.modelo %></strong></td>
-                                <td><%= producto.categoria %></td>
+                                <td><%= producto.marca || '-' %></td>
+                                <td><%= producto.color || '-' %></td>
+                                <td><%= producto.tamano_taco || '-' %></td>
                                 <td><%= producto.tallas[35] || 0 %></td>
                                 <td><%= producto.tallas[36] || 0 %></td>
                                 <td><%= producto.tallas[37] || 0 %></td>

@@ -21,7 +21,7 @@ class ProductoModel {
 
             const response = await sheets.spreadsheets.values.get({
                 spreadsheetId,
-                range: `${this.sheetName}!A:J`,
+                range: `${this.sheetName}!A:P`,
             });
 
             const rows = response.data.values;
@@ -71,20 +71,24 @@ class ProductoModel {
                 [
                     productoData.id,
                     productoData.nombre,
-                    productoData.categoria,
+                    productoData.color,
+                    productoData.marca,
+                    productoData.tamano_taco,
                     productoData.talla_35,
                     productoData.talla_36,
                     productoData.talla_37,
                     productoData.talla_38,
                     productoData.talla_39,
                     productoData.talla_40,
-                    productoData.total
+                    productoData.total,
+                    productoData.precio,
+                    productoData.descripcion
                 ]
             ];
 
             const response = await sheets.spreadsheets.values.append({
                 spreadsheetId,
-                range: `${this.sheetName}!A:J`,
+                range: `${this.sheetName}!A:P`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });
@@ -119,20 +123,24 @@ class ProductoModel {
                 [
                     id,
                     productoData.nombre,
-                    productoData.categoria,
+                    productoData.color,
+                    productoData.marca,
+                    productoData.tamano_taco,
                     productoData.talla_35,
                     productoData.talla_36,
                     productoData.talla_37,
                     productoData.talla_38,
                     productoData.talla_39,
                     productoData.talla_40,
-                    productoData.total
+                    productoData.total,
+                    productoData.precio,
+                    productoData.descripcion
                 ]
             ];
 
             const response = await sheets.spreadsheets.values.update({
                 spreadsheetId,
-                range: `${this.sheetName}!A${rowNumber}:J${rowNumber}`,
+                range: `${this.sheetName}!A${rowNumber}:P${rowNumber}`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });

@@ -195,8 +195,11 @@ class VentasController {
 
             // Construir dirección completa
             const direccionCompleta = `${direccion}, ${distrito}, ${provincia}, ${departamento}`;
+            
+            // Obtener fecha y hora actual en zona horaria de Perú (GMT-5)
             const fecha = new Date();
-            const fechaFormateada = fecha.toISOString();
+            const fechaPeru = new Date(fecha.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+            const fechaFormateada = fechaPeru.toISOString();
 
             // Preparar datos para Google Sheets
             // Orden: Fecha, Modelo, Talla, Cantidad, Departamento, Provincia, Distrito, Dirección, Referencia, Dirección Completa, WhatsApp, Delivery Pagado, Estado, Observaciones

@@ -26,7 +26,7 @@ class ProductosController {
             // Leer productos desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:M'
+                'A:P'
             );
 
             let productos = [];
@@ -37,10 +37,10 @@ class ProductosController {
                     const tallas = {};
                     let totalUnidades = 0;
                     
-                    // Procesar tallas (columnas D a I = índices 3 a 8)
+                    // Procesar tallas (columnas F a K = índices 5 a 10)
                     for (let i = 0; i < 6; i++) {
                         const talla = 35 + i;
-                        const cantidad = parseInt(row[3 + i]) || 0;
+                        const cantidad = parseInt(row[5 + i]) || 0;
                         if (cantidad > 0) {
                             tallas[talla] = cantidad;
                             totalUnidades += cantidad;
@@ -50,11 +50,13 @@ class ProductosController {
                     return {
                         id: row[0] || (index + 1),
                         modelo: row[1] || '',
-                        categoria: row[2] || '',
+                        color: row[2] || '',
+                        marca: row[3] || '',
+                        tamano_taco: row[4] || '',
                         tallas: tallas,
                         totalUnidades: totalUnidades,
-                        precio: row[10] || '',
-                        descripcion: row[11] || ''
+                        precio: row[12] || '',
+                        descripcion: row[13] || ''
                     };
                 });
             }
@@ -82,7 +84,7 @@ class ProductosController {
             // PREVENCIÓN DE DUPLICADOS
             const productosRows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:M'
+                'A:P'
             );
 
             if (productosRows && productosRows.length > 1) {
@@ -140,16 +142,20 @@ class ProductosController {
 
             // Generar ID único
             const id = Date.now().toString();
-            const categoria = req.body.categoria || 'Zapatillas';
             const precio = req.body.precio || '';
             const descripcion = req.body.descripcion || '';
+            const color = req.body.color || '';
+            const marca = req.body.marca || '';
+            const tamano_taco = req.body.tamano_taco || '';
 
             // Preparar fila para Google Sheets
-            // Columnas: id, modelo, categoria, talla_35, talla_36, talla_37, talla_38, talla_39, talla_40, total, precio, descripcion
+            // Columnas: id, modelo, color, marca, tamano_taco, talla_35, talla_36, talla_37, talla_38, talla_39, talla_40, total, precio, descripcion
             const productoData = [
                 id,
                 modelo.trim(),
-                categoria,
+                color,
+                marca,
+                tamano_taco,
                 tallasData[35] || 0,
                 tallasData[36] || 0,
                 tallasData[37] || 0,
@@ -195,7 +201,7 @@ class ProductosController {
             // Obtener todos los productos existentes
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:P'
             );
 
             let productos = [];
@@ -269,7 +275,7 @@ class ProductosController {
             // Leer hoja de productos para encontrar el producto
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:M'
+                'A:P'
             );
 
             if (!rows || rows.length <= 1) {
@@ -298,12 +304,12 @@ class ProductosController {
             // Actualizar stock (sumar cantidades nuevas a las existentes)
             const filaActual = rows[filaIndex];
             const stockActual = {
-                35: parseInt(filaActual[3]) || 0,
-                36: parseInt(filaActual[4]) || 0,
-                37: parseInt(filaActual[5]) || 0,
-                38: parseInt(filaActual[6]) || 0,
-                39: parseInt(filaActual[7]) || 0,
-                40: parseInt(filaActual[8]) || 0
+                35: parseInt(filaActual[5]) || 0,
+                36: parseInt(filaActual[6]) || 0,
+                37: parseInt(filaActual[7]) || 0,
+                38: parseInt(filaActual[8]) || 0,
+                39: parseInt(filaActual[9]) || 0,
+                40: parseInt(filaActual[10]) || 0
             };
 
             // Sumar stock nuevo
@@ -319,11 +325,13 @@ class ProductosController {
             const nuevoTotal = Object.values(stockActual).reduce((sum, val) => sum + val, 0);
 
             // Actualizar fila en Google Sheets
-            // Columnas: id, modelo, categoria, talla_35-40, total, precio, descripcion
+            // Columnas: id, modelo, color, marca, tamano_taco, talla_35-40, total, precio, descripcion
             const filaActualizada = [
                 filaActual[0], // id
                 filaActual[1], // modelo
-                filaActual[2], // categoria
+                filaActual[2], // color
+                filaActual[3], // marca
+                filaActual[4], // tamano_taco
                 stockActual[35],
                 stockActual[36],
                 stockActual[37],
@@ -331,14 +339,14 @@ class ProductosController {
                 stockActual[39],
                 stockActual[40],
                 nuevoTotal,
-                filaActual[10] || '', // precio
-                filaActual[11] || ''  // descripcion
+                filaActual[12] || '', // precio
+                filaActual[13] || ''  // descripcion
             ];
 
             // Escribir en la posición específica (filaIndex + 1 porque las filas empiezan en 1)
             await googleSheetsService.writeSheet(
                 config.sheetNames.productos,
-                `A${filaIndex + 1}:M${filaIndex + 1}`,
+                `A${filaIndex + 1}:P${filaIndex + 1}`,
                 [filaActualizada]
             );
 
@@ -371,7 +379,7 @@ class ProductosController {
         try {
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:P'
             );
 
             if (!rows || rows.length <= 1) {
