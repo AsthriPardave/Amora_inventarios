@@ -148,14 +148,14 @@ class ProductosController {
             const marca = req.body.marca || '';
             const tamano_taco = req.body.tamano_taco || '';
 
-            // Preparar fila para Google Sheets
+            // Preparar fila para Google Sheets (convertir textos a mayúsculas)
             // Columnas: id, modelo, color, marca, tamano_taco, talla_35, talla_36, talla_37, talla_38, talla_39, talla_40, total, precio, descripcion
             const productoData = [
                 id,
-                modelo.trim(),
-                color,
-                marca,
-                tamano_taco,
+                modelo.trim().toUpperCase(),
+                color.toUpperCase(),
+                marca.toUpperCase(),
+                tamano_taco.toUpperCase(),
                 tallasData[35] || 0,
                 tallasData[36] || 0,
                 tallasData[37] || 0,
@@ -164,7 +164,7 @@ class ProductosController {
                 tallasData[40] || 0,
                 totalUnidades,
                 precio,
-                descripcion
+                descripcion.toUpperCase()
             ];
 
             // Guardar en Google Sheets

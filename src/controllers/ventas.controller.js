@@ -146,7 +146,7 @@ class VentasController {
             // Verificar si existe una venta idéntica en los últimos 5 segundos
             const ventasRows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:O'
+                'A:Q'
             );
 
             if (ventasRows && ventasRows.length > 1) {
@@ -159,13 +159,13 @@ class VentasController {
                     
                     // Si hay una venta idéntica en los últimos 5 segundos, es un duplicado
                     if (diferenciaSegundos < 5 &&
-                        venta[1] === modelo &&
-                        venta[2] === color &&
-                        venta[3] === marca &&
-                        venta[4] === tamano_taco &&
+                        venta[1]?.toUpperCase() === modelo?.toUpperCase() &&
+                        venta[2]?.toUpperCase() === color?.toUpperCase() &&
+                        venta[3]?.toUpperCase() === marca?.toUpperCase() &&
+                        venta[4]?.toUpperCase() === tamano_taco?.toUpperCase() &&
                         venta[5] === talla &&
                         venta[6] === cantidad &&
-                        venta[14] === whatsapp) {
+                        venta[13] === whatsapp) {
                         
                         console.warn('⚠️ Duplicado detectado - Venta ignorada');
                         return res.render('ventas/registro', {
@@ -242,26 +242,26 @@ class VentasController {
             const fechaPeru = new Date(fecha.toLocaleString('en-US', { timeZone: 'America/Lima' }));
             const fechaFormateada = fechaPeru.toISOString();
 
-            // Preparar datos para Google Sheets
+            // Preparar datos para Google Sheets (convertir textos a mayúsculas)
             // Orden: Fecha, Modelo, Color, Marca, Taco, Talla, Cantidad, Departamento, Provincia, Distrito, Dirección, Referencia, Dirección Completa, WhatsApp, Delivery Pagado, Estado, Observaciones
             const ventaData = [
-                fechaFormateada,     // A: Fecha
-                modelo,              // B: Modelo
-                color,               // C: Color
-                marca,               // D: Marca
-                tamano_taco,         // E: Tamaño de taco
-                talla,               // F: Talla
-                cantidad,            // G: Cantidad
-                departamento,        // H: Departamento
-                provincia,           // I: Provincia
-                distrito,            // J: Distrito
-                direccion,           // K: Dirección exacta
-                referencia || '',    // L: Referencia
-                direccionCompleta,   // M: Dirección completa
-                whatsapp,            // N: WhatsApp
-                'Sí',                // O: Delivery Pagado (siempre Sí)
-                'Pendiente de envío', // P: Estado
-                observaciones || ''   // Q: Observaciones
+                fechaFormateada,                  // A: Fecha
+                modelo.toUpperCase(),             // B: Modelo
+                color.toUpperCase(),              // C: Color
+                marca.toUpperCase(),              // D: Marca
+                tamano_taco.toUpperCase(),        // E: Tamaño de taco
+                talla,                            // F: Talla
+                cantidad,                         // G: Cantidad
+                departamento.toUpperCase(),       // H: Departamento
+                provincia.toUpperCase(),          // I: Provincia
+                distrito.toUpperCase(),           // J: Distrito
+                direccion.toUpperCase(),          // K: Dirección exacta
+                (referencia || '').toUpperCase(), // L: Referencia
+                direccionCompleta.toUpperCase(),  // M: Dirección completa
+                whatsapp,                         // N: WhatsApp
+                'Sí',                             // O: Delivery Pagado (siempre Sí)
+                'Pendiente de envío',             // P: Estado
+                (observaciones || '').toUpperCase() // Q: Observaciones
             ];
 
             // Guardar en Google Sheets
@@ -274,8 +274,15 @@ class VentasController {
 
             // DESCONTAR STOCK - Ya que el delivery está pagado
             try {
-                await VentasController.descontarStock(modelo, color, marca, tamano_taco, tallaNum, parseInt(cantidad));
-                console.log(`✅ Stock descontado correctamente: ${modelo} - ${color} - ${marca} - ${tamano_taco} - Talla ${tallaNum} - Cantidad ${cantidad}`);
+                await VentasController.descontarStock(
+                    modelo.toUpperCase(), 
+                    color.toUpperCase(), 
+                    marca.toUpperCase(), 
+                    tamano_taco.toUpperCase(), 
+                    tallaNum, 
+                    parseInt(cantidad)
+                );
+                console.log(`✅ Stock descontado correctamente: ${modelo.toUpperCase()} - ${color.toUpperCase()} - ${marca.toUpperCase()} - ${tamano_taco.toUpperCase()} - Talla ${tallaNum} - Cantidad ${cantidad}`);
             } catch (errorStock) {
                 console.error('⚠️ Error al descontar stock:', errorStock.message);
                 // Continuar aunque falle el descuento de stock, la venta ya está registrada

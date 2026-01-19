@@ -301,10 +301,10 @@ class CambiosController {
                     const diferenciaSegundos = (ahora - fechaCambio) / 1000;
                     
                     if (diferenciaSegundos < 5 &&
-                        cambio[2] === modeloOriginal &&
-                        cambio[3] === colorOriginal &&
-                        cambio[4] === marcaOriginal &&
-                        cambio[5] === tacoOriginal &&
+                        cambio[2]?.toUpperCase() === modeloOriginal?.toUpperCase() &&
+                        cambio[3]?.toUpperCase() === colorOriginal?.toUpperCase() &&
+                        cambio[4]?.toUpperCase() === marcaOriginal?.toUpperCase() &&
+                        cambio[5]?.toUpperCase() === tacoOriginal?.toUpperCase() &&
                         cambio[6] === tallaSale &&
                         cambio[11] === tallaEntra &&
                         cambio[12] === whatsapp) {
@@ -412,27 +412,27 @@ class CambiosController {
             // Generar ID único
             const id = Date.now().toString();
 
-            // Preparar datos para Google Sheets
+            // Preparar datos para Google Sheets (convertir textos a mayúsculas)
             // Columnas: id, fecha, modeloOriginal, colorOriginal, marcaOriginal, tacoOriginal, tallaSale, 
             //           modeloNuevo, colorNuevo, marcaNueva, tacoNuevo, tallaEntra, 
             //           cantidad, whatsapp, observaciones, estado
             const cambioData = [
-                id,                         // A
-                fecha,                      // B
-                modeloOriginal.trim(),      // C
-                colorOriginal.trim(),       // D
-                marcaOriginal.trim(),       // E
-                tacoOriginal.trim(),        // F
-                tallaSaleNum,               // G
-                modeloNuevo.trim(),         // H
-                colorNuevo.trim(),          // I
-                marcaNueva.trim(),          // J
-                tacoNuevo.trim(),           // K
-                tallaEntraNum,              // L
-                cantidadCambioNum,          // M
-                whatsapp,                   // N
-                observaciones || '',        // O
-                'pendiente'                 // P
+                id,                                      // A
+                fecha,                                   // B
+                modeloOriginal.trim().toUpperCase(),     // C
+                colorOriginal.trim().toUpperCase(),      // D
+                marcaOriginal.trim().toUpperCase(),      // E
+                tacoOriginal.trim().toUpperCase(),       // F
+                tallaSaleNum,                            // G
+                modeloNuevo.trim().toUpperCase(),        // H
+                colorNuevo.trim().toUpperCase(),         // I
+                marcaNueva.trim().toUpperCase(),         // J
+                tacoNuevo.trim().toUpperCase(),          // K
+                tallaEntraNum,                           // L
+                cantidadCambioNum,                       // M
+                whatsapp,                                // N
+                (observaciones || '').toUpperCase(),     // O
+                'pendiente'                              // P
             ];
 
             // Guardar en Google Sheets
