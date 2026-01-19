@@ -287,39 +287,22 @@
     <script>
         // Datos de ubigeo desde el servidor
         const ubigeoData = <%- JSON.stringify(ubigeo || {}) %>;
-        
-        console.log('=== DEBUG UBIGEO ===');
-        console.log('Ubigeo cargado:', ubigeoData);
-        console.log('Tipo:', typeof ubigeoData);
-        console.log('Departamentos disponibles:', Object.keys(ubigeoData));
 
         // Referencias a los selectores
         const selectDepartamento = document.getElementById('departamento');
         const selectProvincia = document.getElementById('provincia');
         const selectDistrito = document.getElementById('distrito');
-        
-        console.log('Elementos ubigeo encontrados:');
-        console.log('- selectDepartamento:', selectDepartamento);
-        console.log('- selectProvincia:', selectProvincia);
-        console.log('- selectDistrito:', selectDistrito);
 
         // Evento cuando se selecciona un departamento
         selectDepartamento.addEventListener('change', function() {
             const departamento = this.value;
-            console.log('=== EVENTO CHANGE DEPARTAMENTO ===');
-            console.log('Departamento seleccionado:', departamento);
-            console.log('Existe en ubigeo?:', departamento in ubigeoData);
             
             // Limpiar provincia y distrito
             selectProvincia.innerHTML = '<option value="">Seleccionar provincia</option>';
-            selectDistrito.innerHTML = '<option value="">Primero selecciona una provincia</option>';
-            
-            console.log('Campos de ubicación limpiados');
+            selectDistrito.innerHTML = '<option value="">Primero selecciona provincia</option>';
             
             if (departamento && ubigeoData[departamento]) {
                 const provincias = Object.keys(ubigeoData[departamento]).sort();
-                console.log('Provincias encontradas:', provincias.length);
-                console.log('Lista:', provincias);
                 
                 provincias.forEach(function(provincia) {
                     const option = document.createElement('option');
@@ -327,27 +310,21 @@
                     option.textContent = provincia;
                     selectProvincia.appendChild(option);
                 });
-                
-                console.log('Opciones de provincia después:', selectProvincia.options.length);
             } else {
-                console.warn('⚠️ No hay provincias para:', departamento);
-                console.log('Departamentos disponibles:', Object.keys(ubigeoData));
+                selectProvincia.innerHTML = '<option value="">No hay provincias disponibles</option>';
             }
-            console.log('=== FIN EVENTO ===');
         });
 
         // Evento cuando se selecciona una provincia
         selectProvincia.addEventListener('change', function() {
             const departamento = selectDepartamento.value;
             const provincia = this.value;
-            console.log('Provincia seleccionada:', provincia);
             
             // Limpiar distrito
             selectDistrito.innerHTML = '<option value="">Seleccionar distrito</option>';
             
             if (departamento && provincia && ubigeoData[departamento] && ubigeoData[departamento][provincia]) {
                 const distritos = ubigeoData[departamento][provincia];
-                console.log('Distritos disponibles:', distritos);
                 
                 distritos.forEach(function(distrito) {
                     const option = document.createElement('option');
@@ -356,7 +333,7 @@
                     selectDistrito.appendChild(option);
                 });
             } else {
-                console.warn('No hay distritos para:', departamento, provincia);
+                selectDistrito.innerHTML = '<option value="">No hay distritos disponibles</option>';
             }
         });
 
@@ -414,13 +391,6 @@
 
         // Inventario completo desde el servidor
         const inventario = <%- JSON.stringify(inventario || {}) %>;
-        
-        // Debug: Ver qué hay en el inventario
-        console.log('=== DEBUG INVENTARIO ===');
-        console.log('Inventario cargado:', inventario);
-        console.log('Modelos disponibles:', Object.keys(inventario));
-        console.log('Tipo de inventario:', typeof inventario);
-        console.log('Es objeto?:', inventario !== null && typeof inventario === 'object');
 
         const selectModelo = document.getElementById('modelo');
         const selectColor = document.getElementById('color');
@@ -428,84 +398,58 @@
         const selectTaco = document.getElementById('tamano_taco');
         const selectTalla = document.getElementById('talla');
         const tallaInfo = document.getElementById('tallaInfo');
-        
-        console.log('Elementos encontrados:');
-        console.log('- selectModelo:', selectModelo);
-        console.log('- selectColor:', selectColor);
-        console.log('- selectMarca:', selectMarca);
-        console.log('- selectTaco:', selectTaco);
 
         // Cuando se selecciona un modelo
         selectModelo.addEventListener('change', function() {
             const modeloSeleccionado = this.value;
-            console.log('=== EVENTO CHANGE MODELO ===');
-            console.log('Modelo seleccionado:', modeloSeleccionado);
-            console.log('Existe en inventario?:', modeloSeleccionado in inventario);
             
             // Limpiar todos los campos dependientes
             selectColor.innerHTML = '<option value="">Seleccionar color</option>';
             selectMarca.innerHTML = '<option value="">Seleccionar marca</option>';
             selectTaco.innerHTML = '<option value="">Seleccionar tamaño de taco</option>';
             selectTalla.innerHTML = '<option value="">Selecciona color, marca y taco primero</option>';
-            
-            console.log('Campos limpiados');
+            tallaInfo.textContent = 'Selecciona color, marca y taco';
+            tallaInfo.className = 'text-muted';
             
             if (modeloSeleccionado && inventario[modeloSeleccionado]) {
                 const data = inventario[modeloSeleccionado];
-                console.log('Datos del modelo encontrados:', data);
-                console.log('Estructura:', {
-                    colores: data.colores,
-                    marcas: data.marcas,
-                    tacos: data.tacos,
-                    variantes: data.variantes ? data.variantes.length : 0
-                });
                 
                 // Poblar colores
-                if (data.colores && data.colores.length > 0) {
-                    console.log('Agregando', data.colores.length, 'colores');
+                if (data.colores && Array.isArray(data.colores) && data.colores.length > 0) {
                     data.colores.forEach(color => {
                         const option = document.createElement('option');
                         option.value = color;
                         option.textContent = color;
                         selectColor.appendChild(option);
                     });
-                    console.log('Opciones de color después:', selectColor.options.length);
                 } else {
-                    console.warn('⚠️ No hay colores disponibles para:', modeloSeleccionado);
+                    selectColor.innerHTML = '<option value="">No hay colores disponibles</option>';
                 }
                 
                 // Poblar marcas
-                if (data.marcas && data.marcas.length > 0) {
-                    console.log('Agregando', data.marcas.length, 'marcas');
+                if (data.marcas && Array.isArray(data.marcas) && data.marcas.length > 0) {
                     data.marcas.forEach(marca => {
                         const option = document.createElement('option');
                         option.value = marca;
                         option.textContent = marca;
                         selectMarca.appendChild(option);
                     });
-                    console.log('Opciones de marca después:', selectMarca.options.length);
                 } else {
-                    console.warn('⚠️ No hay marcas disponibles');
+                    selectMarca.innerHTML = '<option value="">No hay marcas disponibles</option>';
                 }
                 
                 // Poblar tacos
-                if (data.tacos && data.tacos.length > 0) {
-                    console.log('Agregando', data.tacos.length, 'tacos');
+                if (data.tacos && Array.isArray(data.tacos) && data.tacos.length > 0) {
                     data.tacos.forEach(taco => {
                         const option = document.createElement('option');
                         option.value = taco;
                         option.textContent = taco;
                         selectTaco.appendChild(option);
                     });
-                    console.log('Opciones de taco después:', selectTaco.options.length);
                 } else {
-                    console.warn('⚠️ No hay tacos disponibles');
+                    selectTaco.innerHTML = '<option value="">No hay tacos disponibles</option>';
                 }
-            } else {
-                console.warn('⚠️ No hay inventario para el modelo:', modeloSeleccionado);
-                console.log('Inventario completo:', Object.keys(inventario));
             }
-            console.log('=== FIN EVENTO ===');
         });
 
         // Función para filtrar opciones basado en las selecciones actuales
@@ -635,10 +579,11 @@
                 if (variante && variante.tallas) {
                     const stockDisponible = variante.tallas[talla] || 0;
                 
-                if (cantidad > stockDisponible) {
-                    e.preventDefault();
-                    alert(`⚠️ Stock insuficiente.\n\nSolicitado: ${cantidad} unidades\nDisponible: ${stockDisponible} unidades`);
-                    return false;
+                    if (cantidad > stockDisponible) {
+                        e.preventDefault();
+                        alert(`⚠️ Stock insuficiente.\n\nSolicitado: ${cantidad} unidades\nDisponible: ${stockDisponible} unidades`);
+                        return false;
+                    }
                 }
             }
         });
