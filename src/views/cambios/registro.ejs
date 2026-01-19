@@ -95,15 +95,8 @@
                             >
                                 <option value="">-- Selecciona un pedido --</option>
                                 <% pedidos.forEach((pedido, index) => { %>
-                                    <option 
-                                        value="<%= index %>"
-                                        data-modelo="<%= pedido.modelo %>"
-                                        data-talla="<%= pedido.talla %>"
-                                        data-cantidad="<%= pedido.cantidad %>"
-                                        data-fecha="<%= pedido.fecha %>"
-                                        data-estado="<%= pedido.estado %>"
-                                    >
-                                        <%= pedido.fecha %> - <%= pedido.modelo %> - Talla <%= pedido.talla %> - Cant: <%= pedido.cantidad %> - Estado: <%= pedido.estado %>
+                                    <option value="<%= index %>">
+                                        <%= pedido.fecha %> - <%= pedido.modelo %> (Color: <%= pedido.color %>, Marca: <%= pedido.marca %>, Taco: <%= pedido.taco %>) - Talla <%= pedido.talla %> - Cant: <%= pedido.cantidad %> - Estado: <%= pedido.estado %>
                                     </option>
                                 <% }) %>
                             </select>
@@ -114,6 +107,15 @@
                             <div class="info-grid">
                                 <div class="info-item">
                                     <strong>Modelo Original:</strong> <span id="detalle-modelo"></span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Color Original:</strong> <span id="detalle-color"></span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Marca Original:</strong> <span id="detalle-marca"></span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Taco Original:</strong> <span id="detalle-taco"></span>
                                 </div>
                                 <div class="info-item">
                                     <strong>Talla Original:</strong> <span id="detalle-talla"></span>
@@ -261,6 +263,9 @@
 
                     // Mostrar detalles
                     document.getElementById('detalle-modelo').textContent = pedido.modelo;
+                    document.getElementById('detalle-color').textContent = pedido.color;
+                    document.getElementById('detalle-marca').textContent = pedido.marca;
+                    document.getElementById('detalle-taco').textContent = pedido.taco;
                     document.getElementById('detalle-talla').textContent = pedido.talla;
                     document.getElementById('detalle-cantidad').textContent = pedido.cantidad;
                     document.getElementById('detalle-estado').textContent = pedido.estado;
@@ -268,6 +273,9 @@
 
                     // Cargar datos en campos ocultos
                     document.getElementById('modeloOriginal').value = pedido.modelo;
+                    document.getElementById('colorOriginal').value = pedido.color;
+                    document.getElementById('marcaOriginal').value = pedido.marca;
+                    document.getElementById('tacoOriginal').value = pedido.taco;
                     document.getElementById('tallaSale').value = pedido.talla;
                     document.getElementById('cantidadOriginal').value = pedido.cantidad;
 

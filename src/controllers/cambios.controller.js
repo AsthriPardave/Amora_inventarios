@@ -180,22 +180,22 @@ class CambiosController {
             // Buscar TODOS los pedidos del cliente en Google Sheets por WhatsApp
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:O'
+                'A:Q'
             );
 
             let pedidos = [];
             
             if (rows && rows.length > 1) {
                 // Buscar todos los pedidos por WhatsApp
-                // Nuevo formato: A=Fecha, B=Modelo, C=Talla, D=Cantidad, E=Departamento, F=Provincia, G=Distrito, H=Dirección, I=Referencia, J=Dir.Completa, K=WhatsApp, L=DeliveryPagado, M=Estado, N=Observaciones
-                // WhatsApp está en índice 10 (columna K)
-                // Estado está en índice 12 (columna M)
+                // Formato actual: A=Fecha, B=Modelo, C=Color, D=Marca, E=Taco, F=Talla, G=Cantidad, H=Departamento, I=Provincia, J=Distrito, K=Dirección, L=Referencia, M=Dir.Completa, N=WhatsApp, O=DeliveryPagado, P=Estado, Q=Observaciones
+                // WhatsApp está en índice 13 (columna N)
+                // Estado está en índice 15 (columna P)
                 const modelosUnicos = new Set();
                 
                 for (let i = 1; i < rows.length; i++) {
-                    const estadoEnvio = rows[i][12] || 'Pendiente de envío'; // Columna M (índice 12)
+                    const estadoEnvio = rows[i][15] || 'Pendiente de envío'; // Columna P (índice 15)
                     
-                    if (rows[i][10] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) { // Columna K (índice 10)
+                    if (rows[i][13] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) { // Columna N (índice 13)
                         const modelo = rows[i][1] || '';
                         modelosUnicos.add(modelo);
                         
@@ -203,11 +203,14 @@ class CambiosController {
                             index: i + 1, // Índice de la fila en Google Sheets (base 1)
                             fecha: rows[i][0] || '',
                             modelo: modelo,
-                            talla: rows[i][2] || '',
-                            cantidad: parseInt(rows[i][3]) || 1,
+                            color: rows[i][2] || '',      // Columna C (índice 2)
+                            marca: rows[i][3] || '',      // Columna D (índice 3)
+                            taco: rows[i][4] || '',       // Columna E (índice 4)
+                            talla: rows[i][5] || '',      // Columna F (índice 5)
+                            cantidad: parseInt(rows[i][6]) || 1, // Columna G (índice 6)
                             whatsapp: whatsapp,
                             estado: estadoEnvio,
-                            deliveryPagado: rows[i][11] || '' // Columna L (índice 11)
+                            deliveryPagado: rows[i][14] || '' // Columna O (índice 14)
                         });
                     }
                 }
