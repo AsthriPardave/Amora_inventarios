@@ -8,13 +8,13 @@ const config = require('../config/app.config');
 
 class CambiosController {
     /**
-     * Obtener inventario completo con stock por talla
+     * Obtener inventario completo con tallas disponibles por modelo
      */
     static async obtenerInventarioCompleto() {
         try {
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.productos,
-                'A:J'
+                'A:N'
             );
 
             const inventario = {};
@@ -23,14 +23,54 @@ class CambiosController {
                 rows.slice(1).forEach(row => {
                     const modelo = row[1] || '';
                     if (modelo) {
-                        inventario[modelo] = {};
-                        // Procesar tallas (columnas D a I = índices 3 a 8)
+                        if (!inventario[modelo]) {
+                            inventario[modelo] = {
+                                variantes: [],
+                                tallas: {},
+                                colores: new Set(),
+                                marcas: new Set(),
+                                tacos: new Set()
+                            };
+                        }
+
+                        const color = row[2] || '';
+                        const marca = row[3] || '';
+                        const taco = row[4] || '';
+                        
+                        // Agregar opciones únicas
+                        if (color) inventario[modelo].colores.add(color);
+                        if (marca) inventario[modelo].marcas.add(marca);
+                        if (taco) inventario[modelo].tacos.add(taco);
+
+                        // Crear clave única para esta variante
+                        const varianteKey = `${color}|${marca}|${taco}`;
+                        
+                        // Procesar tallas (columnas F a K = índices 5 a 10)
+                        const tallasVariante = {};
                         for (let i = 0; i < 6; i++) {
                             const talla = 35 + i;
-                            const stock = parseInt(row[3 + i]) || 0;
-                            inventario[modelo][talla] = stock;
+                            const stock = parseInt(row[5 + i]) || 0;
+                            if (stock > 0) {
+                                tallasVariante[talla] = stock;
+                            }
                         }
+
+                        // Guardar variante con sus tallas
+                        inventario[modelo].variantes.push({
+                            color,
+                            marca,
+                            taco,
+                            key: varianteKey,
+                            tallas: tallasVariante
+                        });
                     }
+                });
+
+                // Convertir Sets a Arrays
+                Object.keys(inventario).forEach(modelo => {
+                    inventario[modelo].colores = Array.from(inventario[modelo].colores);
+                    inventario[modelo].marcas = Array.from(inventario[modelo].marcas);
+                    inventario[modelo].tacos = Array.from(inventario[modelo].tacos);
                 });
             }
 
@@ -38,6 +78,29 @@ class CambiosController {
         } catch (error) {
             console.error('Error al obtener inventario completo:', error);
             return {};
+        }
+    }
+
+    /**
+     * Obtener modelos únicos de productos registrados
+     */
+    static async obtenerModelosDisponibles() {
+        try {
+            const rows = await googleSheetsService.readSheet(
+                config.sheetNames.productos,
+                'A:N'
+            );
+
+            if (!rows || rows.length <= 1) {
+                return [];
+            }
+
+            const modelos = [...new Set(rows.slice(1).map(row => row[1]).filter(Boolean))];
+            
+            return modelos;
+        } catch (error) {
+            console.error('Error al obtener modelos:', error);
+            return [];
         }
     }
 
@@ -72,14 +135,14 @@ class CambiosController {
             }
 
             res.render('cambios/lista', {
-                title: 'Cambios de Talla',
+                title: 'Lista de Cambios de Producto',
                 cambios
             });
 
         } catch (error) {
             console.error('Error al listar cambios:', error);
             res.render('cambios/lista', {
-                title: 'Cambios de Talla',
+                title: 'Lista de Cambios de Producto',
                 cambios: []
             });
         }
@@ -90,7 +153,7 @@ class CambiosController {
      */
     static mostrarFormularioCambio(req, res) {
         res.render('cambios/registro', {
-            title: 'Registrar Cambio de Talla',
+            title: 'Registrar Cambio de Producto',
             error: null,
             success: null,
             formData: null
@@ -106,7 +169,7 @@ class CambiosController {
 
             if (!whatsapp) {
                 return res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
+                    title: 'Registrar Cambio de Producto',
                     error: '⚠️ Debes ingresar un número de WhatsApp para buscar.',
                     success: null,
                     pedidos: null,
@@ -154,7 +217,7 @@ class CambiosController {
                 
                 if (pedidos.length === 0) {
                     return res.render('cambios/registro', {
-                        title: 'Registrar Cambio de Talla',
+                        title: 'Registrar Cambio de Producto',
                         error: '⚠️ No se encontraron pedidos en estado "Enviado" o "Entregado" para este número de WhatsApp.',
                         success: null,
                         pedidos: null,
@@ -164,15 +227,19 @@ class CambiosController {
 
                 // Obtener inventario completo para validar stock disponible
                 const inventario = await CambiosController.obtenerInventarioCompleto();
+                
+                // Obtener modelos disponibles
+                const modelos = await CambiosController.obtenerModelosDisponibles();
 
                 res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
+                    title: 'Registrar Cambio de Producto',
                     error: null,
                     success: null,
                     pedidos: pedidos,
                     tieneMultiplesModelos: tieneMultiplesModelos,
                     whatsapp: whatsapp,
                     inventario: inventario,
+                    modelos: modelos,
                     formData: null
                 });
                 
@@ -181,7 +248,7 @@ class CambiosController {
 
             if (pedidos.length === 0) {
                 return res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
+                    title: 'Registrar Cambio de Producto',
                     error: '⚠️ No se encontraron pedidos en estado "Enviado" o "Entregado" para este número de WhatsApp.',
                     success: null,
                     pedidos: null,
@@ -192,7 +259,7 @@ class CambiosController {
         } catch (error) {
             console.error('Error al buscar pedido:', error);
             res.render('cambios/registro', {
-                title: 'Registrar Cambio de Talla',
+                title: 'Registrar Cambio de Producto',
                 error: '❌ Error al buscar el pedido. Por favor, intente nuevamente.',
                 success: null,
                 pedidos: null,
@@ -202,18 +269,24 @@ class CambiosController {
     }
 
     /**
-     * Registrar cambio de talla
+     * Registrar cambio de producto
      */
     static async registrarCambio(req, res) {
         try {
-            const { fecha, modeloOriginal, tallaSale, cantidadOriginal, cantidadCambio, modeloNuevo, tallaEntra, whatsapp, observaciones, formToken } = req.body;
+            const { 
+                fecha, 
+                modeloOriginal, colorOriginal, marcaOriginal, tacoOriginal, tallaSale, 
+                cantidadOriginal, cantidadCambio, 
+                modeloNuevo, colorNuevo, marcaNueva, tacoNuevo, tallaEntra, 
+                whatsapp, observaciones, formToken 
+            } = req.body;
 
             console.log('Datos recibidos en registrarCambio:', req.body);
 
             // PREVENCIÓN DE DUPLICADOS
             const cambiosRows = await googleSheetsService.readSheet(
                 config.sheetNames.cambios,
-                'A:J'
+                'A:P'
             );
 
             if (cambiosRows && cambiosRows.length > 1) {
@@ -226,13 +299,16 @@ class CambiosController {
                     
                     if (diferenciaSegundos < 5 &&
                         cambio[2] === modeloOriginal &&
-                        cambio[3] === tallaSale &&
-                        cambio[5] === tallaEntra &&
-                        cambio[7] === whatsapp) {
+                        cambio[3] === colorOriginal &&
+                        cambio[4] === marcaOriginal &&
+                        cambio[5] === tacoOriginal &&
+                        cambio[6] === tallaSale &&
+                        cambio[11] === tallaEntra &&
+                        cambio[12] === whatsapp) {
                         
                         console.warn('⚠️ Duplicado detectado - Cambio ignorado');
                         return res.render('cambios/registro', {
-                            title: 'Registrar Cambio de Talla',
+                            title: 'Registrar Cambio de Producto',
                             error: null,
                             success: '✅ Cambio ya registrado. No se permiten duplicados.',
                             pedidos: null,
@@ -244,10 +320,11 @@ class CambiosController {
             }
 
             // Validar datos básicos
-            if (!fecha || !modeloOriginal || !tallaSale || !tallaEntra || !whatsapp) {
-                console.log('Validación fallida - campos faltantes:', { fecha, modeloOriginal, tallaSale, tallaEntra, whatsapp });
+            if (!fecha || !modeloOriginal || !colorOriginal || !marcaOriginal || !tacoOriginal || !tallaSale || 
+                !modeloNuevo || !colorNuevo || !marcaNueva || !tacoNuevo || !tallaEntra || !whatsapp) {
+                console.log('Validación fallida - campos faltantes');
                 return res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
+                    title: 'Registrar Cambio de Producto',
                     error: '⚠️ Todos los campos obligatorios deben estar completos.',
                     success: null,
                     pedidos: null,
@@ -262,7 +339,7 @@ class CambiosController {
             
             if (cantidadCambioNum > cantidadOriginalNum) {
                 return res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
+                    title: 'Registrar Cambio de Producto',
                     error: '⚠️ La cantidad a cambiar no puede ser mayor a la cantidad del pedido.',
                     success: null,
                     pedidos: null,
@@ -277,7 +354,7 @@ class CambiosController {
             
             if (tallaSaleNum < 35 || tallaSaleNum > 40 || tallaEntraNum < 35 || tallaEntraNum > 40) {
                 return res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
+                    title: 'Registrar Cambio de Producto',
                     error: '⚠️ Las tallas deben estar entre 35 y 40.',
                     success: null,
                     pedidos: null,
@@ -286,17 +363,42 @@ class CambiosController {
                 });
             }
 
-            // Determinar el modelo final (nuevo o el original si no se especificó)
-            const modeloFinal = modeloNuevo && modeloNuevo.trim() !== '' ? modeloNuevo.trim() : modeloOriginal.trim();
-
-            // VALIDAR STOCK DISPONIBLE para la talla de destino
+            // VALIDAR STOCK DISPONIBLE para el producto de destino
             const inventario = await CambiosController.obtenerInventarioCompleto();
-            const stockDisponible = inventario[modeloFinal]?.[tallaEntraNum] || 0;
+            
+            // Buscar la variante específica en el inventario
+            const varianteKey = `${colorNuevo}|${marcaNueva}|${tacoNuevo}`;
+            const modeloInventario = inventario[modeloNuevo];
+            
+            if (!modeloInventario) {
+                return res.render('cambios/registro', {
+                    title: 'Registrar Cambio de Producto',
+                    error: `⚠️ El modelo "${modeloNuevo}" no existe en el inventario.`,
+                    success: null,
+                    pedidos: null,
+                    tieneMultiplesModelos: false,
+                    formData: req.body
+                });
+            }
+            
+            const variante = modeloInventario.variantes.find(v => v.key === varianteKey);
+            if (!variante) {
+                return res.render('cambios/registro', {
+                    title: 'Registrar Cambio de Producto',
+                    error: `⚠️ La combinación de color "${colorNuevo}", marca "${marcaNueva}" y taco "${tacoNuevo}" no existe para el modelo "${modeloNuevo}".`,
+                    success: null,
+                    pedidos: null,
+                    tieneMultiplesModelos: false,
+                    formData: req.body
+                });
+            }
+            
+            const stockDisponible = variante.tallas[tallaEntraNum] || 0;
             
             if (stockDisponible < cantidadCambioNum) {
                 return res.render('cambios/registro', {
-                    title: 'Registrar Cambio de Talla',
-                    error: `⚠️ No hay suficiente stock disponible. Stock actual del modelo "${modeloFinal}" talla ${tallaEntraNum}: ${stockDisponible} unidad(es). Necesitas: ${cantidadCambioNum}.`,
+                    title: 'Registrar Cambio de Producto',
+                    error: `⚠️ No hay suficiente stock disponible.\nModelo: "${modeloNuevo}"\nColor: "${colorNuevo}"\nMarca: "${marcaNueva}"\nTaco: "${tacoNuevo}"\nTalla: ${tallaEntraNum}\nStock actual: ${stockDisponible} unidad(es)\nNecesitas: ${cantidadCambioNum} unidad(es).`,
                     success: null,
                     pedidos: null,
                     tieneMultiplesModelos: false,
@@ -308,18 +410,26 @@ class CambiosController {
             const id = Date.now().toString();
 
             // Preparar datos para Google Sheets
-            // Columnas: id, fecha, modeloOriginal, tallaSale, modeloNuevo, tallaEntra, cantidad, whatsapp, observaciones, estado
+            // Columnas: id, fecha, modeloOriginal, colorOriginal, marcaOriginal, tacoOriginal, tallaSale, 
+            //           modeloNuevo, colorNuevo, marcaNueva, tacoNuevo, tallaEntra, 
+            //           cantidad, whatsapp, observaciones, estado
             const cambioData = [
-                id,
-                fecha,
-                modeloOriginal.trim(),
-                tallaSaleNum,
-                modeloFinal,
-                tallaEntraNum,
-                cantidadCambioNum,
-                whatsapp,
-                observaciones || '',
-                'pendiente'
+                id,                         // A
+                fecha,                      // B
+                modeloOriginal.trim(),      // C
+                colorOriginal.trim(),       // D
+                marcaOriginal.trim(),       // E
+                tacoOriginal.trim(),        // F
+                tallaSaleNum,               // G
+                modeloNuevo.trim(),         // H
+                colorNuevo.trim(),          // I
+                marcaNueva.trim(),          // J
+                tacoNuevo.trim(),           // K
+                tallaEntraNum,              // L
+                cantidadCambioNum,          // M
+                whatsapp,                   // N
+                observaciones || '',        // O
+                'pendiente'                 // P
             ];
 
             // Guardar en Google Sheets
@@ -407,7 +517,7 @@ class CambiosController {
             console.log('⚠️ Inventario NO modificado. El cambio debe ser marcado como "Realizado" para ajustar el inventario.');
 
             res.render('cambios/registro', {
-                title: 'Registrar Cambio de Talla',
+                title: 'Registrar Cambio de Producto',
                 error: null,
                 success: `✅ Cambio de ${cantidadCambioNum} unidad(es) registrado exitosamente.\n✅ Venta original marcada como cambiada.\n✅ Nueva venta registrada con el producto cambiado.\n⚠️ Estado: Pendiente. El inventario se ajustará cuando se marque como "Realizado".`,
                 pedidos: null,
@@ -418,7 +528,7 @@ class CambiosController {
         } catch (error) {
             console.error('Error al registrar cambio:', error);
             res.render('cambios/registro', {
-                title: 'Registrar Cambio de Talla',
+                title: 'Registrar Cambio de Producto',
                 error: '❌ Error al registrar el cambio. Por favor, intente nuevamente.',
                 success: null,
                 pedidos: null,

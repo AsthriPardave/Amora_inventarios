@@ -12,7 +12,7 @@
     <main class="container">
         <div class="page-header">
             <h1>🔄 <%= title %></h1>
-            <p>Gestiona cambios de talla en pedidos</p>
+            <p>Gestiona cambios de productos en pedidos</p>
             <div class="header-actions">
                 <a href="/cambios/lista" class="btn btn-secondary">📋 Ver Lista de Cambios</a>
             </div>
@@ -129,9 +129,13 @@
                     </div>
 
                     <div class="form-section" id="seccionCambio" style="display: none;">
-                        <h3>🔄 Datos del Cambio</h3>
+                        <h3>🔄 Producto Nuevo (para el cambio)</h3>
+                        <p class="text-muted">Selecciona el producto que el cliente desea recibir en el cambio</p>
                         
                         <input type="hidden" id="modeloOriginal" name="modeloOriginal">
+                        <input type="hidden" id="colorOriginal" name="colorOriginal">
+                        <input type="hidden" id="marcaOriginal" name="marcaOriginal">
+                        <input type="hidden" id="tacoOriginal" name="tacoOriginal">
                         <input type="hidden" id="tallaSale" name="tallaSale">
                         <input type="hidden" id="cantidadOriginal" name="cantidadOriginal">
                         
@@ -163,44 +167,54 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label for="modeloNuevo">Modelo Nuevo *</label>
+                            <select 
+                                id="modeloNuevo" 
+                                name="modeloNuevo" 
+                                class="form-control"
+                                required
+                            >
+                                <option value="">Seleccionar modelo</option>
+                                <% if (locals.modelos) { %>
+                                    <% modelos.forEach(function(modelo) { %>
+                                        <option value="<%= modelo %>">
+                                            <%= modelo %>
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+
                         <div class="form-row">
-                            <% if (locals.tieneMultiplesModelos) { %>
-                                <div class="form-group">
-                                    <label for="modeloNuevo">Modelo Nuevo (opcional)</label>
-                                    <input 
-                                        type="text" 
-                                        id="modeloNuevo" 
-                                        name="modeloNuevo" 
-                                        class="form-control"
-                                        placeholder="Dejar vacío si solo cambia talla"
-                                    >
-                                    <small>Solo si el cliente quiere cambiar de modelo</small>
-                                </div>
-                            <% } else { %>
-                                <input type="hidden" id="modeloNuevo" name="modeloNuevo" value="">
-                            <% } %>
+                            <div class="form-group">
+                                <label for="colorNuevo">Color Nuevo *</label>
+                                <select id="colorNuevo" name="colorNuevo" class="form-control" required>
+                                    <option value="">Primero selecciona un modelo</option>
+                                </select>
+                            </div>
 
                             <div class="form-group">
-                                <label for="tallaEntra">Nueva Talla *</label>
-                                <select 
-                                    id="tallaEntra" 
-                                    name="tallaEntra" 
-                                    class="form-control" 
-                                    required
-                                >
-                                    <option value="">-- Selecciona talla --</option>
-                                    <% if (locals.inventario) { %>
-                                        <% for(let t = 35; t <= 40; t++) { %>
-                                            <option value="<%= t %>" data-talla="<%= t %>"><%= t %></option>
-                                        <% } %>
-                                    <% } else { %>
-                                        <% for(let t = 35; t <= 40; t++) { %>
-                                            <option value="<%= t %>"><%= t %></option>
-                                        <% } %>
-                                    <% } %>
+                                <label for="marcaNueva">Marca Nueva *</label>
+                                <select id="marcaNueva" name="marcaNueva" class="form-control" required>
+                                    <option value="">Primero selecciona un modelo</option>
                                 </select>
-                                <small id="stockInfo" class="text-muted">Selecciona una talla para ver stock disponible</small>
                             </div>
+
+                            <div class="form-group">
+                                <label for="tacoNuevo">Tamaño de Taco Nuevo *</label>
+                                <select id="tacoNuevo" name="tacoNuevo" class="form-control" required>
+                                    <option value="">Primero selecciona un modelo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tallaEntra">Talla Nueva *</label>
+                            <select id="tallaEntra" name="tallaEntra" class="form-control" required>
+                                <option value="">Selecciona color, marca y taco primero</option>
+                            </select>
+                            <small id="tallaInfo" class="text-muted">Selecciona los atributos del producto</small>
                         </div>
 
                         <div class="form-group">
@@ -227,42 +241,44 @@
             </div>
 
             <script>
+                // Datos del pedido en formato JSON para acceso JavaScript
+                const pedidosData = <%- JSON.stringify(pedidos || []) %>;
+                
                 function cargarDatosPedido() {
                     const select = document.getElementById('pedidoSeleccionado');
-                    const selectedOption = select.options[select.selectedIndex];
+                    const selectedIndex = parseInt(select.value);
                     
-                    if (selectedOption.value === '') {
+                    if (select.value === '' || isNaN(selectedIndex)) {
                         document.getElementById('detallesPedido').style.display = 'none';
                         document.getElementById('seccionCambio').style.display = 'none';
                         document.getElementById('botonesAccion').style.display = 'none';
                         return;
                     }
 
-                    // Mostrar detalles
-                    const modelo = selectedOption.dataset.modelo;
-                    const talla = selectedOption.dataset.talla;
-                    const cantidad = parseInt(selectedOption.dataset.cantidad);
-                    const estado = selectedOption.dataset.estado;
+                    // Obtener datos del pedido seleccionado
+                    const pedido = pedidosData[selectedIndex];
+                    if (!pedido) return;
 
-                    document.getElementById('detalle-modelo').textContent = modelo;
-                    document.getElementById('detalle-talla').textContent = talla;
-                    document.getElementById('detalle-cantidad').textContent = cantidad;
-                    document.getElementById('detalle-estado').textContent = estado;
+                    // Mostrar detalles
+                    document.getElementById('detalle-modelo').textContent = pedido.modelo;
+                    document.getElementById('detalle-talla').textContent = pedido.talla;
+                    document.getElementById('detalle-cantidad').textContent = pedido.cantidad;
+                    document.getElementById('detalle-estado').textContent = pedido.estado;
                     document.getElementById('detallesPedido').style.display = 'block';
 
                     // Cargar datos en campos ocultos
-                    document.getElementById('modeloOriginal').value = modelo;
-                    document.getElementById('tallaSale').value = talla;
-                    document.getElementById('cantidadOriginal').value = cantidad;
+                    document.getElementById('modeloOriginal').value = pedido.modelo;
+                    document.getElementById('tallaSale').value = pedido.talla;
+                    document.getElementById('cantidadOriginal').value = pedido.cantidad;
 
                     // Configurar cantidad a cambiar
                     const inputCantidad = document.getElementById('cantidadCambio');
-                    inputCantidad.max = cantidad;
+                    inputCantidad.max = pedido.cantidad;
                     inputCantidad.value = 1;
-                    document.getElementById('maxCantidad').textContent = cantidad;
+                    document.getElementById('maxCantidad').textContent = pedido.cantidad;
 
                     // Mostrar/ocultar grupo de cantidad según la cantidad del pedido
-                    if (cantidad > 1) {
+                    if (pedido.cantidad > 1) {
                         document.getElementById('grupoCantidadCambio').style.display = 'block';
                     } else {
                         document.getElementById('grupoCantidadCambio').style.display = 'none';
@@ -280,11 +296,11 @@
             <h4>💡 Información Importante</h4>
             <ul>
                 <li>Solo se muestran pedidos en estado "Enviado" o "Entregado"</li>
-                <li>El cambio de talla debe registrarse cuando el cliente devuelve el producto</li>
-                <li>La <strong>talla que sale</strong> es la que el cliente devuelve (se suma al inventario)</li>
-                <li>La <strong>talla que entra</strong> es la nueva que se entrega al cliente (se descuenta del inventario)</li>
+                <li>El cambio debe registrarse cuando el cliente devuelve el producto</li>
+                <li>Puedes cambiar <strong>cualquier atributo</strong> del producto: modelo, color, marca, taco o talla</li>
+                <li>El <strong>producto que sale</strong> es el que el cliente devuelve (se suma al inventario)</li>
+                <li>El <strong>producto que entra</strong> es el nuevo que se entrega al cliente (se descuenta del inventario)</li>
                 <li>Si el pedido tiene varias unidades, puedes elegir cuántas cambiar</li>
-                <li>El campo de modelo solo aparece si el cliente ha comprado diferentes modelos</li>
                 <li>El estado inicial del cambio es <span class="badge badge-warning">Pendiente</span></li>
                 <li>Una vez completado el cambio físico, actualiza el estado a <span class="badge badge-success">Realizado</span></li>
             </ul>
@@ -297,63 +313,158 @@
     
     <% if (locals.inventario) { %>
     <script>
-        // Datos de inventario desde el servidor
+        // Inventario completo desde el servidor
         const inventario = <%- JSON.stringify(inventario || {}) %>;
-        
-        // Actualizar opciones de talla según stock disponible
-        function actualizarTallasDisponibles() {
-            const modeloSeleccionado = document.getElementById('modeloOriginal').value || 
-                                       document.getElementById('modeloNuevo')?.value;
-            const tallaSelect = document.getElementById('tallaEntra');
-            const stockInfo = document.getElementById('stockInfo');
+
+        const selectModeloNuevo = document.getElementById('modeloNuevo');
+        const selectColorNuevo = document.getElementById('colorNuevo');
+        const selectMarcaNueva = document.getElementById('marcaNueva');
+        const selectTacoNuevo = document.getElementById('tacoNuevo');
+        const selectTallaEntra = document.getElementById('tallaEntra');
+        const tallaInfo = document.getElementById('tallaInfo');
+
+        // Cuando se selecciona un modelo
+        selectModeloNuevo.addEventListener('change', function() {
+            const modeloSeleccionado = this.value;
             
-            if (!modeloSeleccionado || !inventario[modeloSeleccionado]) {
-                return;
-            }
-            
-            // Actualizar información de stock cuando se selecciona una talla
-            tallaSelect.addEventListener('change', function() {
-                const tallaSeleccionada = parseInt(this.value);
-                const stock = inventario[modeloSeleccionado]?.[tallaSeleccionada] || 0;
+            // Limpiar todos los campos dependientes
+            selectColorNuevo.innerHTML = '<option value="">Seleccionar color</option>';
+            selectMarcaNueva.innerHTML = '<option value="">Seleccionar marca</option>';
+            selectTacoNuevo.innerHTML = '<option value="">Seleccionar tamaño de taco</option>';
+            selectTallaEntra.innerHTML = '<option value="">Selecciona color, marca y taco primero</option>';
+            tallaInfo.textContent = 'Selecciona color, marca y taco';
+            tallaInfo.className = 'text-muted';
+
+            if (modeloSeleccionado && inventario[modeloSeleccionado]) {
+                const data = inventario[modeloSeleccionado];
                 
-                if (stock === 0) {
-                    stockInfo.innerHTML = '<span style="color: #e74c3c;">⚠️ Sin stock disponible para esta talla</span>';
-                    this.setCustomValidity('No hay stock disponible para esta talla');
-                } else if (stock < 3) {
-                    stockInfo.innerHTML = `<span style="color: #f39c12;">⚠️ Stock bajo: ${stock} unidad(es) disponible(s)</span>`;
-                    this.setCustomValidity('');
+                // Poblar colores
+                if (data.colores && Array.isArray(data.colores) && data.colores.length > 0) {
+                    data.colores.forEach(color => {
+                        const option = document.createElement('option');
+                        option.value = color;
+                        option.textContent = color;
+                        selectColorNuevo.appendChild(option);
+                    });
                 } else {
-                    stockInfo.innerHTML = `<span style="color: #27ae60;">✓ Stock disponible: ${stock} unidad(es)</span>`;
-                    this.setCustomValidity('');
+                    selectColorNuevo.innerHTML = '<option value="">No hay colores disponibles</option>';
                 }
-            });
+                
+                // Poblar marcas
+                if (data.marcas && Array.isArray(data.marcas) && data.marcas.length > 0) {
+                    data.marcas.forEach(marca => {
+                        const option = document.createElement('option');
+                        option.value = marca;
+                        option.textContent = marca;
+                        selectMarcaNueva.appendChild(option);
+                    });
+                } else {
+                    selectMarcaNueva.innerHTML = '<option value="">No hay marcas disponibles</option>';
+                }
+                
+                // Poblar tacos
+                if (data.tacos && Array.isArray(data.tacos) && data.tacos.length > 0) {
+                    data.tacos.forEach(taco => {
+                        const option = document.createElement('option');
+                        option.value = taco;
+                        option.textContent = taco;
+                        selectTacoNuevo.appendChild(option);
+                    });
+                } else {
+                    selectTacoNuevo.innerHTML = '<option value="">No hay tacos disponibles</option>';
+                }
+            }
+        });
+
+        // Función para actualizar tallas
+        function actualizarTallas() {
+            const modeloSeleccionado = selectModeloNuevo.value;
+            const colorSeleccionado = selectColorNuevo.value;
+            const marcaSeleccionada = selectMarcaNueva.value;
+            const tacoSeleccionado = selectTacoNuevo.value;
+            
+            selectTallaEntra.innerHTML = '<option value="">Seleccionar talla</option>';
+            tallaInfo.textContent = 'Selecciona color, marca y taco';
+            tallaInfo.className = 'text-muted';
+            
+            // Solo mostrar tallas si los 3 atributos están seleccionados
+            if (modeloSeleccionado && colorSeleccionado && marcaSeleccionada && tacoSeleccionado && inventario[modeloSeleccionado]) {
+                const varianteKey = `${colorSeleccionado}|${marcaSeleccionada}|${tacoSeleccionado}`;
+                const data = inventario[modeloSeleccionado];
+                
+                // Buscar la variante exacta
+                const variante = data.variantes.find(v => v.key === varianteKey);
+                
+                if (variante && variante.tallas) {
+                    const tallasDisponibles = Object.keys(variante.tallas).sort((a, b) => a - b);
+                    
+                    if (tallasDisponibles.length > 0) {
+                        tallasDisponibles.forEach(talla => {
+                            const stock = variante.tallas[talla];
+                            const option = document.createElement('option');
+                            option.value = talla;
+                            option.textContent = `${talla} (${stock} disponibles)`;
+                            selectTallaEntra.appendChild(option);
+                        });
+                        
+                        tallaInfo.textContent = `👟 Tallas disponibles: ${tallasDisponibles.join(', ')}`;
+                        tallaInfo.className = 'text-success';
+                    } else {
+                        tallaInfo.textContent = '⚠️ Esta combinación no tiene stock disponible';
+                        tallaInfo.className = 'text-danger';
+                    }
+                } else {
+                    tallaInfo.textContent = '⚠️ Esta combinación no está disponible en el inventario';
+                    tallaInfo.className = 'text-danger';
+                }
+            }
         }
-        
-        // Llamar cuando se carga un pedido
-        const pedidoSelect = document.getElementById('pedidoSeleccionado');
-        if (pedidoSelect) {
-            pedidoSelect.addEventListener('change', function() {
-                setTimeout(actualizarTallasDisponibles, 100);
-            });
-        }
-        
-        // Actualizar cuando cambia el modelo nuevo
-        const modeloNuevoInput = document.getElementById('modeloNuevo');
-        if (modeloNuevoInput) {
-            modeloNuevoInput.addEventListener('change', actualizarTallasDisponibles);
-        }
+
+        // Eventos para actualizar tallas cuando cambian los selectores
+        selectColorNuevo.addEventListener('change', actualizarTallas);
+        selectMarcaNueva.addEventListener('change', actualizarTallas);
+        selectTacoNuevo.addEventListener('change', actualizarTallas);
+
+        // Validar stock antes de enviar
+        document.querySelector('form[action="/cambios/registrar"]')?.addEventListener('submit', function(e) {
+            const modelo = selectModeloNuevo.value;
+            const color = selectColorNuevo.value;
+            const marca = selectMarcaNueva.value;
+            const taco = selectTacoNuevo.value;
+            const talla = parseInt(selectTallaEntra.value);
+            const cantidad = parseInt(document.getElementById('cantidadCambio').value);
+            
+            if (modelo && color && marca && taco && talla && inventario[modelo]) {
+                const varianteKey = `${color}|${marca}|${taco}`;
+                const data = inventario[modelo];
+                const variante = data.variantes.find(v => v.key === varianteKey);
+                
+                if (variante && variante.tallas) {
+                    const stockDisponible = variante.tallas[talla] || 0;
+                
+                    if (cantidad > stockDisponible) {
+                        e.preventDefault();
+                        alert(`⚠️ Stock insuficiente.\n\nSolicitado: ${cantidad} unidades\nDisponible: ${stockDisponible} unidades`);
+                        return false;
+                    }
+                }
+            }
+        });
     </script>
     <% } %>
     
     <script>
-        // Validar que las tallas no sean iguales
+        // Validación adicional antes de enviar
         document.querySelector('form[action="/cambios/registrar"]')?.addEventListener('submit', function(e) {
             const tallaSale = document.getElementById('tallaSale').value;
             const tallaEntra = document.getElementById('tallaEntra').value;
+            const modeloOriginal = document.getElementById('modeloOriginal').value;
+            const modeloNuevo = document.getElementById('modeloNuevo').value;
             
-            if (tallaSale === tallaEntra) {
+            // Solo validar si es el mismo modelo
+            if (modeloOriginal === modeloNuevo && tallaSale === tallaEntra) {
                 e.preventDefault();
-                alert('⚠️ La talla que sale y la que entra no pueden ser la misma.');
+                alert('⚠️ El producto nuevo no puede ser idéntico al original.');
                 return false;
             }
         });
