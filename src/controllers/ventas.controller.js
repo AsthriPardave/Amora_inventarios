@@ -239,11 +239,16 @@ class VentasController {
             
             // Obtener fecha y hora actual en zona horaria de Perú (GMT-5)
             const fecha = new Date();
-            const fechaPeru = new Date(fecha.toLocaleString('en-US', { timeZone: 'America/Lima' }));
-            const fechaFormateada = fechaPeru.toISOString();
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = fecha.getFullYear();
+            const fechaFormateada = `${dia}/${mes}/${anio}`;
+
+            // Combinar ubicación en una sola celda
+            const ubicacion = `${departamento.toUpperCase()}, ${provincia.toUpperCase()}, ${distrito.toUpperCase()}`;
 
             // Preparar datos para Google Sheets (convertir textos a mayúsculas)
-            // Orden: Fecha, Modelo, Color, Marca, Taco, Talla, Cantidad, Departamento, Provincia, Distrito, Dirección, Referencia, Dirección Completa, WhatsApp, Delivery Pagado, Estado, Observaciones
+            // Nuevo orden: Fecha, Modelo, Color, Marca, Taco, Talla, Cantidad, Ubicación, Dirección Completa, Referencia, WhatsApp, Delivery Pagado, Estado, Observaciones
             const ventaData = [
                 fechaFormateada,                  // A: Fecha
                 modelo.toUpperCase(),             // B: Modelo
@@ -252,16 +257,13 @@ class VentasController {
                 tamano_taco.toUpperCase(),        // E: Tamaño de taco
                 talla,                            // F: Talla
                 cantidad,                         // G: Cantidad
-                departamento.toUpperCase(),       // H: Departamento
-                provincia.toUpperCase(),          // I: Provincia
-                distrito.toUpperCase(),           // J: Distrito
-                direccion.toUpperCase(),          // K: Dirección exacta
-                (referencia || '').toUpperCase(), // L: Referencia
-                direccionCompleta.toUpperCase(),  // M: Dirección completa
-                whatsapp,                         // N: WhatsApp
-                'Sí',                             // O: Delivery Pagado (siempre Sí)
-                'Pendiente de envío',             // P: Estado
-                (observaciones || '').toUpperCase() // Q: Observaciones
+                ubicacion,                        // H: Ubicación (Departamento, Provincia, Distrito)
+                direccionCompleta.toUpperCase(),  // I: Dirección completa
+                (referencia || '').toUpperCase(), // J: Referencia
+                whatsapp,                         // K: WhatsApp
+                'Sí',                             // L: Delivery Pagado (siempre Sí)
+                'Pendiente de envío',             // M: Estado
+                (observaciones || '').toUpperCase() // N: Observaciones
             ];
 
             // Guardar en Google Sheets

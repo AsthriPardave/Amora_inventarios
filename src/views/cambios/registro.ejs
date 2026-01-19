@@ -142,18 +142,8 @@
                         <input type="hidden" id="cantidadOriginal" name="cantidadOriginal">
                         
                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="fecha">Fecha del Cambio *</label>
-                                <input 
-                                    type="date" 
-                                    id="fecha" 
-                                    name="fecha" 
-                                    class="form-control"
-                                    value="<%= new Date().toISOString().split('T')[0] %>"
-                                    required
-                                >
-                            </div>
-
+                            <!-- Fecha se genera automáticamente en el servidor -->
+                            
                             <div class="form-group" id="grupoCantidadCambio">
                                 <label for="cantidadCambio">Cantidad a Cambiar *</label>
                                 <input 

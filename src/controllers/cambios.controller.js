@@ -186,22 +186,22 @@ class CambiosController {
             // Buscar TODOS los pedidos del cliente en Google Sheets por WhatsApp
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:Q'
+                'A:N'
             );
 
             let pedidos = [];
             
             if (rows && rows.length > 1) {
                 // Buscar todos los pedidos por WhatsApp
-                // Formato actual: A=Fecha, B=Modelo, C=Color, D=Marca, E=Taco, F=Talla, G=Cantidad, H=Departamento, I=Provincia, J=Distrito, K=Dirección, L=Referencia, M=Dir.Completa, N=WhatsApp, O=DeliveryPagado, P=Estado, Q=Observaciones
-                // WhatsApp está en índice 13 (columna N)
-                // Estado está en índice 15 (columna P)
+                // Formato nuevo: A=Fecha, B=Modelo, C=Color, D=Marca, E=Taco, F=Talla, G=Cantidad, H=Ubicación, I=Dir.Completa, J=Referencia, K=WhatsApp, L=DeliveryPagado, M=Estado, N=Observaciones
+                // WhatsApp está en índice 10 (columna K)
+                // Estado está en índice 12 (columna M)
                 const modelosUnicos = new Set();
                 
                 for (let i = 1; i < rows.length; i++) {
-                    const estadoEnvio = rows[i][15] || 'Pendiente de envío'; // Columna P (índice 15)
+                    const estadoEnvio = rows[i][12] || 'Pendiente de envío'; // Columna M (índice 12)
                     
-                    if (rows[i][13] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) { // Columna N (índice 13)
+                    if (rows[i][10] === whatsapp && (estadoEnvio === 'Enviado' || estadoEnvio === 'Entregado')) { // Columna K (índice 10)
                         const modelo = rows[i][1] || '';
                         modelosUnicos.add(modelo);
                         
@@ -216,7 +216,7 @@ class CambiosController {
                             cantidad: parseInt(rows[i][6]) || 1, // Columna G (índice 6)
                             whatsapp: whatsapp,
                             estado: estadoEnvio,
-                            deliveryPagado: rows[i][14] || '' // Columna O (índice 14)
+                            deliveryPagado: rows[i][11] || '' // Columna L (índice 11)
                         });
                     }
                 }
@@ -283,14 +283,21 @@ class CambiosController {
     static async registrarCambio(req, res) {
         try {
             const { 
-                fecha, 
                 modeloOriginal, colorOriginal, marcaOriginal, tacoOriginal, tallaSale, 
                 cantidadOriginal, cantidadCambio, 
                 modeloNuevo, colorNuevo, marcaNueva, tacoNuevo, tallaEntra, 
                 whatsapp, observaciones, formToken 
             } = req.body;
 
-            console.log('Datos recibidos en registrarCambio:', req.body);
+            console.log('📝 Iniciando registro de cambio...');
+
+            // Generar fecha actual en formato dd/mm/yyyy
+            const ahora = new Date();
+            const dia = String(ahora.getDate()).padStart(2, '0');
+            const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+            const anio = ahora.getFullYear();
+            const fechaFormateada = `${dia}/${mes}/${anio}`;
+            console.log('📅 Fecha generada:', fechaFormateada);
 
             // PREVENCIÓN DE DUPLICADOS
             const cambiosRows = await googleSheetsService.readSheet(
@@ -299,7 +306,6 @@ class CambiosController {
             );
 
             if (cambiosRows && cambiosRows.length > 1) {
-                const ahora = new Date();
                 const ultimosCambios = cambiosRows.slice(-5);
                 
                 for (const cambio of ultimosCambios) {
@@ -329,7 +335,7 @@ class CambiosController {
             }
 
             // Validar datos básicos
-            if (!fecha || !modeloOriginal || !colorOriginal || !marcaOriginal || !tacoOriginal || !tallaSale || 
+            if (!modeloOriginal || !colorOriginal || !marcaOriginal || !tacoOriginal || !tallaSale || 
                 !modeloNuevo || !colorNuevo || !marcaNueva || !tacoNuevo || !tallaEntra || !whatsapp) {
                 console.log('Validación fallida - campos faltantes');
                 return res.render('cambios/registro', {
@@ -418,13 +424,6 @@ class CambiosController {
             // Generar ID único
             const id = Date.now().toString();
 
-            // Formatear fecha a dd/mm/yyyy
-            const fechaObj = new Date(fecha);
-            const dia = String(fechaObj.getDate()).padStart(2, '0');
-            const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
-            const anio = fechaObj.getFullYear();
-            const fechaFormateada = `${dia}/${mes}/${anio}`;
-
             // Preparar datos para Google Sheets (convertir textos a mayúsculas)
             // Columnas: id, fecha, modeloOriginal, colorOriginal, marcaOriginal, tacoOriginal, tallaSale, 
             //           modeloNuevo, colorNuevo, marcaNueva, tacoNuevo, tallaEntra, 
@@ -490,33 +489,42 @@ class CambiosController {
             // Obtener datos de la venta original para copiar dirección y otros datos
             if (ventasRows && ventasRows.length > 1) {
                 for (let i = 1; i < ventasRows.length; i++) {
-                    const ventaWhatsapp = ventasRows[i][11] || '';
-                    const ventaModelo = ventasRows[i][1] || '';
-                    const ventaTalla = ventasRows[i][2] || '';
+                    const ventaWhatsapp = ventasRows[i][10] || ''; // Columna K
+                    const ventaModelo = (ventasRows[i][1] || '').toLowerCase(); // Columna B
+                    const ventaColor = (ventasRows[i][2] || '').toLowerCase(); // Columna C
+                    const ventaMarca = (ventasRows[i][3] || '').toLowerCase(); // Columna D
+                    const ventaTaco = (ventasRows[i][4] || '').toLowerCase(); // Columna E
+                    const ventaTalla = ventasRows[i][5] || ''; // Columna F
                     
                     if (ventaWhatsapp === whatsapp && 
-                        ventaModelo === modeloOriginal.trim() && 
+                        ventaModelo === modeloOriginal.trim().toLowerCase() && 
+                        ventaColor === colorOriginal.trim().toLowerCase() &&
+                        ventaMarca === marcaOriginal.trim().toLowerCase() &&
+                        ventaTaco === tacoOriginal.trim().toLowerCase() &&
                         ventaTalla == tallaSaleNum) {
                         
                         // Copiar datos de dirección de la venta original
-                        const fechaVenta = new Date().toISOString();
+                        const fechaActual = new Date();
+                        const diaVenta = String(fechaActual.getDate()).padStart(2, '0');
+                        const mesVenta = String(fechaActual.getMonth() + 1).padStart(2, '0');
+                        const anioVenta = fechaActual.getFullYear();
+                        const fechaVenta = `${diaVenta}/${mesVenta}/${anioVenta}`;
                         
                         const nuevaVentaData = [
-                            fechaVenta,
-                            modeloFinal, // nuevo modelo
-                            tallaEntraNum, // nueva talla
-                            cantidadCambioNum, // cantidad
-                            ventasRows[i][4] || '', // tipoVia
-                            ventasRows[i][5] || '', // nombreVia
-                            ventasRows[i][6] || '', // numero
-                            ventasRows[i][7] || '', // interior
-                            ventasRows[i][8] || '', // ciudad
-                            ventasRows[i][9] || '', // referencia
-                            ventasRows[i][10] || '', // direccionCompleta
-                            whatsapp,
-                            'Sí', // deliveryPagado
-                            'Pendiente de envío', // estado
-                            `🔄 Producto generado por cambio de talla (ID cambio: ${id})` // observaciones
+                            fechaVenta,                      // A: Fecha
+                            modeloNuevo.trim().toUpperCase(), // B: Modelo nuevo
+                            colorNuevo.trim().toUpperCase(),  // C: Color nuevo
+                            marcaNueva.trim().toUpperCase(),  // D: Marca nueva
+                            tacoNuevo.trim().toUpperCase(),   // E: Taco nuevo
+                            tallaEntraNum,                    // F: Talla nueva
+                            cantidadCambioNum,                // G: Cantidad
+                            ventasRows[i][7] || '',           // H: Ubicación (copiar de venta original)
+                            ventasRows[i][8] || '',           // I: Dirección completa (copiar de venta original)
+                            ventasRows[i][9] || '',           // J: Referencia (copiar de venta original)
+                            whatsapp,                         // K: WhatsApp
+                            'Sí',                             // L: Delivery Pagado
+                            'Pendiente de envío',             // M: Estado
+                            `🔄 Producto generado por cambio (ID: ${id})` // N: Observaciones
                         ];
                         
                         await googleSheetsService.appendSheet(
