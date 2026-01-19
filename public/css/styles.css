@@ -1601,11 +1601,12 @@ textarea.form-control {
 /* Badges de talla */
 .talla-badge {
     display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1.1rem;
-    min-width: 50px;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    min-width: 30px;
+    text-align: center;
 }
 
 .talla-badge-sale {

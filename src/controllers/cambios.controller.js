@@ -112,7 +112,7 @@ class CambiosController {
             // Leer cambios desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.cambios,
-                'A:J'
+                'A:P'
             );
 
             let cambios = [];
@@ -123,13 +123,19 @@ class CambiosController {
                         id: row[0] || (index + 1),
                         fecha: row[1] || '',
                         modeloOriginal: row[2] || '',
-                        tallaSale: row[3] || '',
-                        modeloNuevo: row[4] || '',
-                        tallaEntra: row[5] || '',
-                        cantidad: row[6] || '1',
-                        whatsapp: row[7] || '',
-                        observaciones: row[8] || '',
-                        estado: row[9] || 'pendiente'
+                        colorOriginal: row[3] || '',
+                        marcaOriginal: row[4] || '',
+                        tacoOriginal: row[5] || '',
+                        tallaSale: row[6] || '',
+                        modeloNuevo: row[7] || '',
+                        colorNuevo: row[8] || '',
+                        marcaNueva: row[9] || '',
+                        tacoNuevo: row[10] || '',
+                        tallaEntra: row[11] || '',
+                        cantidad: row[12] || '1',
+                        whatsapp: row[13] || '',
+                        observaciones: row[14] || '',
+                        estado: row[15] || 'pendiente'
                     };
                 });
             }
@@ -412,13 +418,20 @@ class CambiosController {
             // Generar ID único
             const id = Date.now().toString();
 
+            // Formatear fecha a dd/mm/yyyy
+            const fechaObj = new Date(fecha);
+            const dia = String(fechaObj.getDate()).padStart(2, '0');
+            const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+            const anio = fechaObj.getFullYear();
+            const fechaFormateada = `${dia}/${mes}/${anio}`;
+
             // Preparar datos para Google Sheets (convertir textos a mayúsculas)
             // Columnas: id, fecha, modeloOriginal, colorOriginal, marcaOriginal, tacoOriginal, tallaSale, 
             //           modeloNuevo, colorNuevo, marcaNueva, tacoNuevo, tallaEntra, 
             //           cantidad, whatsapp, observaciones, estado
             const cambioData = [
                 id,                                      // A
-                fecha,                                   // B
+                fechaFormateada,                         // B
                 modeloOriginal.trim().toUpperCase(),     // C
                 colorOriginal.trim().toUpperCase(),      // D
                 marcaOriginal.trim().toUpperCase(),      // E
@@ -555,7 +568,7 @@ class CambiosController {
             // Leer cambios desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.cambios,
-                'A:J'
+                'A:P'
             );
 
             if (!rows || rows.length <= 1) {
@@ -573,13 +586,19 @@ class CambiosController {
                         id: rows[i][0],
                         fecha: rows[i][1],
                         modeloOriginal: rows[i][2],
-                        tallaSale: parseInt(rows[i][3]),
-                        modeloNuevo: rows[i][4],
-                        tallaEntra: parseInt(rows[i][5]),
-                        cantidad: parseInt(rows[i][6]) || 1,
-                        whatsapp: rows[i][7],
-                        observaciones: rows[i][8],
-                        estadoActual: rows[i][9]
+                        colorOriginal: rows[i][3],
+                        marcaOriginal: rows[i][4],
+                        tacoOriginal: rows[i][5],
+                        tallaSale: parseInt(rows[i][6]),
+                        modeloNuevo: rows[i][7],
+                        colorNuevo: rows[i][8],
+                        marcaNueva: rows[i][9],
+                        tacoNuevo: rows[i][10],
+                        tallaEntra: parseInt(rows[i][11]),
+                        cantidad: parseInt(rows[i][12]) || 1,
+                        whatsapp: rows[i][13],
+                        observaciones: rows[i][14],
+                        estadoActual: rows[i][15]
                     };
                     break;
                 }
@@ -597,36 +616,68 @@ class CambiosController {
                 // Leer inventario actual
                 const productosRows = await googleSheetsService.readSheet(
                     config.sheetNames.productos,
-                    'A:J'
+                    'A:N'
                 );
 
                 if (productosRows && productosRows.length > 1) {
-                    // Buscar el modelo en inventario
+                    // Buscar el producto original (que sale) en inventario - debe coincidir modelo, color, marca y taco
                     for (let i = 1; i < productosRows.length; i++) {
-                        const modeloInventario = productosRows[i][1] || '';
+                        const modeloInventario = (productosRows[i][1] || '').toLowerCase();
+                        const colorInventario = (productosRows[i][2] || '').toLowerCase();
+                        const marcaInventario = (productosRows[i][3] || '').toLowerCase();
+                        const tacoInventario = (productosRows[i][4] || '').toLowerCase();
                         
-                        if (modeloInventario.toLowerCase() === cambio.modeloOriginal.toLowerCase()) {
-                            // Actualizar stock de tallas según la cantidad
-                            const indiceTallaSale = cambio.tallaSale - 35 + 3; // columna D=3 para talla 35
-                            const indiceTallaEntra = cambio.tallaEntra - 35 + 3;
-                            const cantidad = cambio.cantidad;
+                        // Verificar si coincide el producto original (que sale)
+                        if (modeloInventario === cambio.modeloOriginal.toLowerCase() &&
+                            colorInventario === cambio.colorOriginal.toLowerCase() &&
+                            marcaInventario === cambio.marcaOriginal.toLowerCase() &&
+                            tacoInventario === cambio.tacoOriginal.toLowerCase()) {
                             
-                            // La talla que SALE vuelve al stock (+cantidad)
+                            // Actualizar stock: la talla que SALE vuelve al stock (+cantidad)
+                            const indiceTallaSale = cambio.tallaSale - 35 + 5; // columna F=5 para talla 35
+                            const cantidad = cambio.cantidad;
                             const stockTallaSale = parseInt(productosRows[i][indiceTallaSale]) || 0;
                             productosRows[i][indiceTallaSale] = stockTallaSale + cantidad;
                             
-                            // La talla que ENTRA se descuenta (-cantidad)
+                            // Recalcular total
+                            let nuevoTotal = 0;
+                            for (let t = 0; t < 6; t++) {
+                                nuevoTotal += parseInt(productosRows[i][5 + t]) || 0;
+                            }
+                            productosRows[i][13] = nuevoTotal; // columna N = total
+                            
+                            console.log(`✅ Producto original ajustado: ${cambio.modeloOriginal} ${cambio.colorOriginal} ${cambio.marcaOriginal} ${cambio.tacoOriginal} - Talla ${cambio.tallaSale} +${cantidad}`);
+                            break;
+                        }
+                    }
+                    
+                    // Buscar el producto nuevo (que entra) en inventario
+                    for (let i = 1; i < productosRows.length; i++) {
+                        const modeloInventario = (productosRows[i][1] || '').toLowerCase();
+                        const colorInventario = (productosRows[i][2] || '').toLowerCase();
+                        const marcaInventario = (productosRows[i][3] || '').toLowerCase();
+                        const tacoInventario = (productosRows[i][4] || '').toLowerCase();
+                        
+                        // Verificar si coincide el producto nuevo (que entra)
+                        if (modeloInventario === cambio.modeloNuevo.toLowerCase() &&
+                            colorInventario === cambio.colorNuevo.toLowerCase() &&
+                            marcaInventario === cambio.marcaNueva.toLowerCase() &&
+                            tacoInventario === cambio.tacoNuevo.toLowerCase()) {
+                            
+                            // Actualizar stock: la talla que ENTRA se descuenta (-cantidad)
+                            const indiceTallaEntra = cambio.tallaEntra - 35 + 5; // columna F=5 para talla 35
+                            const cantidad = cambio.cantidad;
                             const stockTallaEntra = parseInt(productosRows[i][indiceTallaEntra]) || 0;
                             productosRows[i][indiceTallaEntra] = Math.max(0, stockTallaEntra - cantidad);
                             
                             // Recalcular total
                             let nuevoTotal = 0;
                             for (let t = 0; t < 6; t++) {
-                                nuevoTotal += parseInt(productosRows[i][3 + t]) || 0;
+                                nuevoTotal += parseInt(productosRows[i][5 + t]) || 0;
                             }
-                            productosRows[i][9] = nuevoTotal; // columna J = total
+                            productosRows[i][13] = nuevoTotal; // columna N = total
                             
-                            console.log(`✅ Inventario ajustado: Talla ${cambio.tallaSale} +${cantidad}, Talla ${cambio.tallaEntra} -${cantidad}`);
+                            console.log(`✅ Producto nuevo ajustado: ${cambio.modeloNuevo} ${cambio.colorNuevo} ${cambio.marcaNueva} ${cambio.tacoNuevo} - Talla ${cambio.tallaEntra} -${cantidad}`);
                             break;
                         }
                     }
@@ -640,8 +691,8 @@ class CambiosController {
                 }
             }
 
-            // Actualizar el estado del cambio
-            rows[cambioIndex][9] = estado;
+            // Actualizar el estado del cambio (columna P = índice 15)
+            rows[cambioIndex][15] = estado;
             await googleSheetsService.updateSheet(
                 config.sheetNames.cambios,
                 'A1',

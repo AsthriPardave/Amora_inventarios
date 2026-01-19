@@ -57,9 +57,8 @@
                         <thead>
                             <tr>
                                 <th>Fecha</th>
-                                <th>Modelo</th>
-                                <th>Talla Sale</th>
-                                <th>Talla Entra</th>
+                                <th>Producto Original (Sale)</th>
+                                <th>Producto Nuevo (Entra)</th>
                                 <th>Cantidad</th>
                                 <th>WhatsApp</th>
                                 <th>Estado</th>
@@ -69,13 +68,50 @@
                         <tbody>
                             <% cambios.forEach(cambio => { %>
                                 <tr>
-                                    <td><%= new Date(cambio.fecha).toLocaleDateString('es-PE') %></td>
-                                    <td><strong><%= cambio.modelo %></strong></td>
-                                    <td class="text-center">
-                                        <span class="talla-badge talla-badge-sale"><%= cambio.tallaSale %></span>
+                                    <td><%= cambio.fecha %></td>
+                                    <!-- Producto Original (lo que sale - en rojo) -->
+                                    <td>
+                                        <div style="line-height: 1.5;">
+                                            <div>
+                                                <strong style="<%= cambio.modeloOriginal !== cambio.modeloNuevo ? 'color: #e74c3c;' : '' %>">
+                                                    <%= cambio.modeloOriginal %>
+                                                </strong>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Color: <span style="<%= cambio.colorOriginal !== cambio.colorNuevo ? 'color: #e74c3c;' : '' %>"><%= cambio.colorOriginal %></span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Marca: <span style="<%= cambio.marcaOriginal !== cambio.marcaNueva ? 'color: #e74c3c;' : '' %>"><%= cambio.marcaOriginal %></span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Taco: <span style="<%= cambio.tacoOriginal !== cambio.tacoNuevo ? 'color: #e74c3c;' : '' %>"><%= cambio.tacoOriginal %></span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Talla: <span class="talla-badge" style="<%= cambio.tallaSale !== cambio.tallaEntra ? 'background-color: #e74c3c; color: white;' : '' %>"><%= cambio.tallaSale %></span>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="talla-badge talla-badge-entra"><%= cambio.tallaEntra %></span>
+                                    <!-- Producto Nuevo (lo que entra - en verde) -->
+                                    <td>
+                                        <div style="line-height: 1.5;">
+                                            <div>
+                                                <strong style="<%= cambio.modeloOriginal !== cambio.modeloNuevo ? 'color: #27ae60;' : '' %>">
+                                                    <%= cambio.modeloNuevo %>
+                                                </strong>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Color: <span style="<%= cambio.colorOriginal !== cambio.colorNuevo ? 'color: #27ae60;' : '' %>"><%= cambio.colorNuevo %></span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Marca: <span style="<%= cambio.marcaOriginal !== cambio.marcaNueva ? 'color: #27ae60;' : '' %>"><%= cambio.marcaNueva %></span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Taco: <span style="<%= cambio.tacoOriginal !== cambio.tacoNuevo ? 'color: #27ae60;' : '' %>"><%= cambio.tacoNuevo %></span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                Talla: <span class="talla-badge" style="<%= cambio.tallaSale !== cambio.tallaEntra ? 'background-color: #27ae60; color: white;' : '' %>"><%= cambio.tallaEntra %></span>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="text-center"><%= cambio.cantidad %></td>
                                     <td>
