@@ -226,21 +226,14 @@
                             <td><%= venta.talla %></td>
                             <td><%= venta.cantidad %></td>
                             <td>
-                                <% if (venta.departamento && venta.provincia && venta.ciudad) { %>
-                                    <%= venta.departamento %> - <%= venta.provincia %> - <%= venta.ciudad %>
-                                <% } else if (venta.ciudad) { %>
-                                    <%= venta.ciudad %>
+                                <% if (venta.ubicacion) { %>
+                                    <%= venta.ubicacion %>
                                 <% } else { %>
                                     <span class="text-muted">No especificado</span>
                                 <% } %>
                             </td>
                             <td>
-                                <% if (venta.direccion) { %>
-                                    <%= venta.direccion %>
-                                    <% if (venta.referencia) { %>
-                                        <br><small style="color: #6c757d;">Ref: <%= venta.referencia %></small>
-                                    <% } %>
-                                <% } else if (venta.direccionCompleta) { %>
+                                <% if (venta.direccionCompleta) { %>
                                     <%= venta.direccionCompleta %>
                                     <% if (venta.referencia) { %>
                                         <br><small style="color: #6c757d;">Ref: <%= venta.referencia %></small>

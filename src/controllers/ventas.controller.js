@@ -146,7 +146,7 @@ class VentasController {
             // Verificar si existe una venta idéntica en los últimos 5 segundos
             const ventasRows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:Q'
+                'A:N'
             );
 
             if (ventasRows && ventasRows.length > 1) {
@@ -158,6 +158,7 @@ class VentasController {
                     const diferenciaSegundos = (ahora - fechaVenta) / 1000;
                     
                     // Si hay una venta idéntica en los últimos 5 segundos, es un duplicado
+                    // Índices correctos: 0=fecha, 1=modelo, 2=color, 3=marca, 4=taco, 5=talla, 6=cantidad, 10=whatsapp
                     if (diferenciaSegundos < 5 &&
                         venta[1]?.toUpperCase() === modelo?.toUpperCase() &&
                         venta[2]?.toUpperCase() === color?.toUpperCase() &&
@@ -165,7 +166,7 @@ class VentasController {
                         venta[4]?.toUpperCase() === tamano_taco?.toUpperCase() &&
                         venta[5] === talla &&
                         venta[6] === cantidad &&
-                        venta[13] === whatsapp) {
+                        venta[10] === whatsapp) {
                         
                         console.warn('⚠️ Duplicado detectado - Venta ignorada');
                         return res.render('ventas/registro', {
@@ -237,6 +238,9 @@ class VentasController {
             // Construir dirección completa
             const direccionCompleta = `${direccion}, ${distrito}, ${provincia}, ${departamento}`;
             
+            // Construir ubicación (Departamento - Provincia - Distrito)
+            const ubicacionCompleta = `${departamento.toUpperCase()} - ${provincia.toUpperCase()} - ${distrito.toUpperCase()}`;
+            
             // Obtener fecha y hora actual en zona horaria de Perú (GMT-5)
             const fecha = new Date();
             const dia = String(fecha.getDate()).padStart(2, '0');
@@ -244,27 +248,26 @@ class VentasController {
             const anio = fecha.getFullYear();
             const fechaFormateada = `${dia}/${mes}/${anio}`;
 
-            // Combinar ubicación en una sola celda
-            const ubicacion = `${departamento.toUpperCase()}, ${provincia.toUpperCase()}, ${distrito.toUpperCase()}`;
-
             // Preparar datos para Google Sheets (convertir textos a mayúsculas)
-            // Nuevo orden: Fecha, Modelo, Color, Marca, Taco, Talla, Cantidad, Ubicación, Dirección Completa, Referencia, WhatsApp, Delivery Pagado, Estado, Observaciones
+            // Orden correcto: fecha, modelo, Color, Marca, Taco, Talla, Cantidad, Departamento, Direccion completa, Referencias, WhatsApp, Delivery pagado, Estado, Observaciones
             const ventaData = [
-                fechaFormateada,                  // A: Fecha
-                modelo.toUpperCase(),             // B: Modelo
+                fechaFormateada,                  // A: fecha
+                modelo.toUpperCase(),             // B: modelo
                 color.toUpperCase(),              // C: Color
                 marca.toUpperCase(),              // D: Marca
-                tamano_taco.toUpperCase(),        // E: Tamaño de taco
+                tamano_taco.toUpperCase(),        // E: Taco
                 talla,                            // F: Talla
                 cantidad,                         // G: Cantidad
-                ubicacion,                        // H: Ubicación (Departamento, Provincia, Distrito)
-                direccionCompleta.toUpperCase(),  // I: Dirección completa
-                (referencia || '').toUpperCase(), // J: Referencia
+                ubicacionCompleta,                // H: Departamento - Provincia - Distrito
+                direccionCompleta.toUpperCase(),  // I: Direccion completa
+                (referencia || '').toUpperCase(), // J: Referencias
                 whatsapp,                         // K: WhatsApp
-                'Sí',                             // L: Delivery Pagado (siempre Sí)
+                'Sí',                             // L: Delivery pagado
                 'Pendiente de envío',             // M: Estado
                 (observaciones || '').toUpperCase() // N: Observaciones
             ];
+
+            console.log('📝 Datos de venta a guardar:', ventaData);
 
             // Guardar en Google Sheets
             await googleSheetsService.appendSheet(
@@ -322,33 +325,30 @@ class VentasController {
             // Leer ventas desde Google Sheets
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:Q'
+                'A:N'
             );
 
             let ventas = [];
             
             if (rows && rows.length > 1) {
                 // Convertir filas a objetos
-                // Orden: A=Fecha, B=Modelo, C=Color, D=Marca, E=Taco, F=Talla, G=Cantidad, H=Departamento, I=Provincia, J=Distrito, K=Dirección, L=Referencia, M=Dir.Completa, N=WhatsApp, O=DeliveryPagado, P=Estado, Q=Observaciones
+                // Orden correcto: fecha, modelo, Color, Marca, Taco, Talla, Cantidad, Departamento, Direccion completa, Referencias, WhatsApp, Delivery pagado, Estado, Observaciones
                 ventas = rows.slice(1).map(row => {
                     return {
-                        fecha: row[0] || '',           // A
-                        modelo: row[1] || '',          // B
-                        color: row[2] || '',           // C
-                        marca: row[3] || '',           // D
-                        taco: row[4] || '',            // E
-                        talla: row[5] || '',           // F
-                        cantidad: row[6] || '',        // G
-                        departamento: row[7] || '',    // H
-                        provincia: row[8] || '',       // I
-                        ciudad: row[9] || '',          // J (distrito)
-                        direccion: row[10] || '',      // K (dirección exacta)
-                        referencia: row[11] || '',     // L
-                        direccionCompleta: row[12] || '', // M
-                        whatsapp: row[13] || '',       // N
-                        deliveryPagado: row[14] || '', // O
-                        estado: row[15] || 'Pendiente de envío', // P
-                        observaciones: row[16] || ''   // Q
+                        fecha: row[0] || '',           // A: fecha
+                        modelo: row[1] || '',          // B: modelo
+                        color: row[2] || '',           // C: Color
+                        marca: row[3] || '',           // D: Marca
+                        taco: row[4] || '',            // E: Taco
+                        talla: row[5] || '',           // F: Talla
+                        cantidad: row[6] || '',        // G: Cantidad
+                        ubicacion: row[7] || '',       // H: Departamento - Provincia - Distrito
+                        direccionCompleta: row[8] || '', // I: Direccion completa
+                        referencia: row[9] || '',      // J: Referencias
+                        whatsapp: row[10] || '',       // K: WhatsApp
+                        deliveryPagado: row[11] || '', // L: Delivery pagado
+                        estado: row[12] || 'Pendiente de envío', // M: Estado
+                        observaciones: row[13] || ''   // N: Observaciones
                     };
                 });
             }
