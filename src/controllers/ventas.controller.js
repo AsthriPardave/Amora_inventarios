@@ -383,10 +383,10 @@ class VentasController {
                 });
             }
 
-            // Leer la venta actual
+            // Leer la venta actual - Usar A:N (14 columnas según el encabezado)
             const rows = await googleSheetsService.readSheet(
                 config.sheetNames.ventas,
-                'A:Q'
+                'A:N'
             );
 
             if (!rows || rows.length < rowIndex) {
@@ -397,40 +397,29 @@ class VentasController {
             }
 
             const filaActual = rows[rowIndex - 1];
-            const deliveryAnterior = filaActual[14]; // Estado anterior del delivery (columna O, índice 14)
 
             // Actualizar solo los campos de delivery y estado
+            // Orden: fecha, modelo, Color, Marca, Taco, Talla, Cantidad, Departamento, Direccion completa, Referencias, WhatsApp, Delivery pagado, Estado, Observaciones
             const filaActualizada = [...filaActual];
             if (deliveryPagado !== undefined) {
-                filaActualizada[14] = deliveryPagado; // Columna O (índice 14)
+                filaActualizada[11] = deliveryPagado; // Columna L: Delivery pagado (índice 11)
             }
             if (estado !== undefined) {
-                filaActualizada[15] = estado; // Columna P (índice 15)
+                filaActualizada[12] = estado; // Columna M: Estado (índice 12)
             }
 
-            // Si el delivery cambia de No/Pendiente a Sí/Pagado, descontar stock
-            if (deliveryPagado === 'Sí' && deliveryAnterior !== 'Sí') {
-                console.log('Descontando stock por cambio de delivery a Pagado');
-                
-                const modelo = filaActual[1];  // B: Modelo
-                const color = filaActual[2];   // C: Color
-                const marca = filaActual[3];   // D: Marca
-                const taco = filaActual[4];    // E: Taco
-                const talla = parseInt(filaActual[5]);  // F: Talla
-                const cantidad = parseInt(filaActual[6]); // G: Cantidad
+            // NOTA IMPORTANTE: NO descontar stock aquí
+            // El stock ya se descuenta al registrar la venta (cuando deliveryPagado = 'Sí')
+            // Solo actualizamos el estado de envío/entrega
 
-                // Descontar stock del inventario
-                await VentasController.descontarStock(modelo, color, marca, taco, talla, cantidad);
-            }
-
-            // Escribir la fila actualizada
+            // Escribir la fila actualizada en el rango correcto (A:N)
             await googleSheetsService.writeSheet(
                 config.sheetNames.ventas,
-                `A${rowIndex}:Q${rowIndex}`,
+                `A${rowIndex}:N${rowIndex}`,
                 [filaActualizada]
             );
 
-            console.log(`Venta actualizada en fila ${rowIndex}:`, {
+            console.log(`✅ Venta actualizada en fila ${rowIndex}:`, {
                 deliveryPagado,
                 estado
             });
