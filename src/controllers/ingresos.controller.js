@@ -79,6 +79,10 @@ class ProductosController {
      */
     static async registrarProducto(req, res) {
         try {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🆕 INICIANDO REGISTRO DE PRODUCTO');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            
             const { fecha, modelo } = req.body;
 
             // Validar datos obligatorios
@@ -126,7 +130,6 @@ class ProductosController {
             const marcaNorm = marca.trim().toUpperCase();
             const tamanoTacoNorm = tamano_taco.trim().toUpperCase();
             const descripcionNorm = descripcion.trim().toUpperCase();
-            const precioNorm = precio.toString().trim();
 
             // Leer productos existentes para buscar coincidencias
             const productosRows = await googleSheetsService.readSheet(
@@ -142,13 +145,13 @@ class ProductosController {
                 color: colorNorm,
                 marca: marcaNorm,
                 taco: tamanoTacoNorm,
-                precio: precioNorm
+                precio: precio
             });
 
             if (productosRows && productosRows.length > 1) {
                 console.log(`📊 Total de productos en la hoja: ${productosRows.length - 1}`);
                 
-                // Buscar producto que coincida en: modelo, color, marca, tamaño de taco y precio
+                // Buscar producto que coincida SOLO en: modelo, color, marca y tamaño de taco (SIN precio)
                 for (let i = 1; i < productosRows.length; i++) {
                     const row = productosRows[i];
                     
@@ -157,15 +160,13 @@ class ProductosController {
                     const rowColor = (row[2] || '').toString().trim().toUpperCase();
                     const rowMarca = (row[3] || '').toString().trim().toUpperCase();
                     const rowTamanoTaco = (row[4] || '').toString().trim().toUpperCase();
-                    const rowPrecio = (row[12] || '').toString().trim();
                     
-                    // Log de cada comparación
+                    // Comparar SOLO modelo, color, marca y taco (NO precio)
                     const esCoincidencia = 
                         rowModelo === modeloNorm &&
                         rowColor === colorNorm &&
                         rowMarca === marcaNorm &&
-                        rowTamanoTaco === tamanoTacoNorm &&
-                        rowPrecio === precioNorm;
+                        rowTamanoTaco === tamanoTacoNorm;
                     
                     if (i <= 3 || esCoincidencia) { // Log de las primeras 3 filas o si hay coincidencia
                         console.log(`Fila ${i + 1}:`, {
@@ -173,7 +174,6 @@ class ProductosController {
                             color: `"${rowColor}" === "${colorNorm}" ? ${rowColor === colorNorm}`,
                             marca: `"${rowMarca}" === "${marcaNorm}" ? ${rowMarca === marcaNorm}`,
                             taco: `"${rowTamanoTaco}" === "${tamanoTacoNorm}" ? ${rowTamanoTaco === tamanoTacoNorm}`,
-                            precio: `"${rowPrecio}" === "${precioNorm}" ? ${rowPrecio === precioNorm}`,
                             COINCIDE: esCoincidencia
                         });
                     }
@@ -181,7 +181,7 @@ class ProductosController {
                     if (esCoincidencia) {
                         productoExistente = row;
                         filaIndex = i;
-                        console.log('✅ Producto existente encontrado en fila', i + 1, '- Se sumará el stock');
+                        console.log('✅ Producto existente encontrado en fila', i + 1, '- Se sumará el stock y actualizará el precio');
                         break;
                     }
                 }
@@ -191,8 +191,9 @@ class ProductosController {
                 }
             }
 
-            // Si existe un producto idéntico, sumar el stock
+            // Si existe un producto con las mismas características, sumar el stock y actualizar precio
             if (productoExistente) {
+                const precioAnterior = productoExistente[12];
                 const stockActual = {
                     35: parseInt(productoExistente[5]) || 0,
                     36: parseInt(productoExistente[6]) || 0,
@@ -212,7 +213,7 @@ class ProductosController {
                 // Calcular nuevo total
                 const nuevoTotal = Object.values(stockActual).reduce((sum, val) => sum + val, 0);
 
-                // Actualizar fila en Google Sheets (mantener descripción original)
+                // Actualizar fila en Google Sheets (actualizar precio y mantener descripción original)
                 const filaActualizada = [
                     productoExistente[0], // id original
                     modeloNorm,
@@ -226,7 +227,7 @@ class ProductosController {
                     stockActual[39],
                     stockActual[40],
                     nuevoTotal,
-                    precioNorm,
+                    precio, // Actualizar con el nuevo precio
                     productoExistente[13] || descripcionNorm // Mantener descripción original
                 ];
 
@@ -237,16 +238,18 @@ class ProductosController {
                     [filaActualizada]
                 );
 
+                const mensajePrecio = precioAnterior !== precio ? ` Precio actualizado de ${precioAnterior} a ${precio}.` : '';
                 console.log(`✅ Stock agregado a producto existente (ID: ${productoExistente[0]}):`, {
                     modelo: modeloNorm,
                     unidadesAgregadas: totalUnidades,
-                    totalNuevo: nuevoTotal
+                    totalNuevo: nuevoTotal,
+                    precioNuevo: precio
                 });
 
                 res.render('productos/registro', {
                     title: 'Registrar Producto',
                     error: null,
-                    success: `✅ Stock agregado al producto existente. Se añadieron ${totalUnidades} unidades al modelo "${modeloNorm}".`,
+                    success: `✅ Stock agregado al producto existente. Se añadieron ${totalUnidades} unidades al modelo "${modeloNorm}".${mensajePrecio}`,
                     formData: null
                 });
 
@@ -269,7 +272,7 @@ class ProductosController {
                     tallasData[39] || 0,
                     tallasData[40] || 0,
                     totalUnidades,
-                    precioNorm,
+                    precio, // Guardar el precio tal como viene del formulario
                     descripcionNorm
                 ];
 
@@ -285,7 +288,7 @@ class ProductosController {
                     color: colorNorm,
                     marca: marcaNorm,
                     taco: tamanoTacoNorm,
-                    precio: precioNorm,
+                    precio: precio,
                     unidades: totalUnidades
                 });
 
