@@ -119,9 +119,26 @@ class CambiosController {
             
             if (rows && rows.length > 1) {
                 cambios = rows.slice(1).map((row, index) => {
+                    // Formatear fecha correctamente
+                    let fechaFormateada = row[1] || '';
+                    try {
+                        // Si la fecha viene en formato de Google Sheets, convertirla
+                        if (fechaFormateada && !fechaFormateada.includes('/')) {
+                            const fecha = new Date(fechaFormateada);
+                            if (!isNaN(fecha.getTime())) {
+                                const dia = String(fecha.getDate()).padStart(2, '0');
+                                const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                                const anio = fecha.getFullYear();
+                                fechaFormateada = `${dia}/${mes}/${anio}`;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error al formatear fecha:', error);
+                    }
+
                     return {
                         id: row[0] || (index + 1),
-                        fecha: row[1] || '',
+                        fecha: fechaFormateada,
                         modeloOriginal: row[2] || '',
                         colorOriginal: row[3] || '',
                         marcaOriginal: row[4] || '',
@@ -291,8 +308,9 @@ class CambiosController {
 
             console.log('📝 Iniciando registro de cambio...');
 
-            // Generar fecha actual en formato dd/mm/yyyy
+            // Generar fecha actual
             const ahora = new Date();
+            // Formatear fecha para mostrar en logs y mensajes
             const dia = String(ahora.getDate()).padStart(2, '0');
             const mes = String(ahora.getMonth() + 1).padStart(2, '0');
             const anio = ahora.getFullYear();
