@@ -120,12 +120,13 @@ class ProductosController {
             const marca = req.body.marca || '';
             const tamano_taco = req.body.tamano_taco || '';
 
-            // Normalizar datos para comparación (convertir a mayúsculas)
+            // Normalizar datos para comparación (convertir a mayúsculas y limpiar espacios)
             const modeloNorm = modelo.trim().toUpperCase();
-            const colorNorm = color.toUpperCase();
-            const marcaNorm = marca.toUpperCase();
-            const tamanoTacoNorm = tamano_taco.toUpperCase();
-            const descripcionNorm = descripcion.toUpperCase();
+            const colorNorm = color.trim().toUpperCase();
+            const marcaNorm = marca.trim().toUpperCase();
+            const tamanoTacoNorm = tamano_taco.trim().toUpperCase();
+            const descripcionNorm = descripcion.trim().toUpperCase();
+            const precioNorm = precio.toString().trim();
 
             // Leer productos existentes para buscar coincidencias
             const productosRows = await googleSheetsService.readSheet(
@@ -136,24 +137,57 @@ class ProductosController {
             let productoExistente = null;
             let filaIndex = -1;
 
+            console.log('🔍 Buscando producto con:', {
+                modelo: modeloNorm,
+                color: colorNorm,
+                marca: marcaNorm,
+                taco: tamanoTacoNorm,
+                precio: precioNorm
+            });
+
             if (productosRows && productosRows.length > 1) {
-                // Buscar producto que coincida en TODOS los campos
+                console.log(`📊 Total de productos en la hoja: ${productosRows.length - 1}`);
+                
+                // Buscar producto que coincida en: modelo, color, marca, tamaño de taco y precio
                 for (let i = 1; i < productosRows.length; i++) {
                     const row = productosRows[i];
                     
-                    // Comparar todos los campos (índices: 1=modelo, 2=color, 3=marca, 4=tamano_taco, 12=precio, 13=descripcion)
-                    if (
-                        row[1] === modeloNorm &&
-                        row[2] === colorNorm &&
-                        row[3] === marcaNorm &&
-                        row[4] === tamanoTacoNorm &&
-                        row[12] === precio &&
-                        row[13] === descripcionNorm
-                    ) {
+                    // Normalizar valores de la fila para comparación
+                    const rowModelo = (row[1] || '').toString().trim().toUpperCase();
+                    const rowColor = (row[2] || '').toString().trim().toUpperCase();
+                    const rowMarca = (row[3] || '').toString().trim().toUpperCase();
+                    const rowTamanoTaco = (row[4] || '').toString().trim().toUpperCase();
+                    const rowPrecio = (row[12] || '').toString().trim();
+                    
+                    // Log de cada comparación
+                    const esCoincidencia = 
+                        rowModelo === modeloNorm &&
+                        rowColor === colorNorm &&
+                        rowMarca === marcaNorm &&
+                        rowTamanoTaco === tamanoTacoNorm &&
+                        rowPrecio === precioNorm;
+                    
+                    if (i <= 3 || esCoincidencia) { // Log de las primeras 3 filas o si hay coincidencia
+                        console.log(`Fila ${i + 1}:`, {
+                            modelo: `"${rowModelo}" === "${modeloNorm}" ? ${rowModelo === modeloNorm}`,
+                            color: `"${rowColor}" === "${colorNorm}" ? ${rowColor === colorNorm}`,
+                            marca: `"${rowMarca}" === "${marcaNorm}" ? ${rowMarca === marcaNorm}`,
+                            taco: `"${rowTamanoTaco}" === "${tamanoTacoNorm}" ? ${rowTamanoTaco === tamanoTacoNorm}`,
+                            precio: `"${rowPrecio}" === "${precioNorm}" ? ${rowPrecio === precioNorm}`,
+                            COINCIDE: esCoincidencia
+                        });
+                    }
+                    
+                    if (esCoincidencia) {
                         productoExistente = row;
                         filaIndex = i;
+                        console.log('✅ Producto existente encontrado en fila', i + 1, '- Se sumará el stock');
                         break;
                     }
+                }
+                
+                if (!productoExistente) {
+                    console.log('❌ No se encontró producto coincidente. Se creará uno nuevo.');
                 }
             }
 
@@ -178,7 +212,7 @@ class ProductosController {
                 // Calcular nuevo total
                 const nuevoTotal = Object.values(stockActual).reduce((sum, val) => sum + val, 0);
 
-                // Actualizar fila en Google Sheets
+                // Actualizar fila en Google Sheets (mantener descripción original)
                 const filaActualizada = [
                     productoExistente[0], // id original
                     modeloNorm,
@@ -192,8 +226,8 @@ class ProductosController {
                     stockActual[39],
                     stockActual[40],
                     nuevoTotal,
-                    precio,
-                    descripcionNorm
+                    precioNorm,
+                    productoExistente[13] || descripcionNorm // Mantener descripción original
                 ];
 
                 // Escribir en la posición específica (filaIndex + 1 porque las filas empiezan en 1)
@@ -203,7 +237,11 @@ class ProductosController {
                     [filaActualizada]
                 );
 
-                console.log('Stock agregado a producto existente:', modeloNorm);
+                console.log(`✅ Stock agregado a producto existente (ID: ${productoExistente[0]}):`, {
+                    modelo: modeloNorm,
+                    unidadesAgregadas: totalUnidades,
+                    totalNuevo: nuevoTotal
+                });
 
                 res.render('productos/registro', {
                     title: 'Registrar Producto',
@@ -231,7 +269,7 @@ class ProductosController {
                     tallasData[39] || 0,
                     tallasData[40] || 0,
                     totalUnidades,
-                    precio,
+                    precioNorm,
                     descripcionNorm
                 ];
 
@@ -241,7 +279,15 @@ class ProductosController {
                     [productoData]
                 );
 
-                console.log('Producto nuevo registrado en Google Sheets:', productoData);
+                console.log('✅ Producto nuevo registrado:', {
+                    id,
+                    modelo: modeloNorm,
+                    color: colorNorm,
+                    marca: marcaNorm,
+                    taco: tamanoTacoNorm,
+                    precio: precioNorm,
+                    unidades: totalUnidades
+                });
 
                 res.render('productos/registro', {
                     title: 'Registrar Producto',
