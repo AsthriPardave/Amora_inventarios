@@ -15,10 +15,4 @@ router.post('/registrar', ProductosController.registrarProducto);
 // GET - Listar productos
 router.get('/lista', ProductosController.listarProductos);
 
-// GET - Mostrar formulario para agregar stock a producto existente
-router.get('/agregar-stock', ProductosController.mostrarFormularioAgregarStock);
-
-// POST - Procesar agregado de stock
-router.post('/agregar-stock', ProductosController.agregarStockProducto);
-
 module.exports = router;
